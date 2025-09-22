@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual envs
+.venv/
+env/
+venv/
+
+# Local tooling
+.poetry-cache/
+
+# Project data
+.env
+.env.*
+data/raw/
+data/out/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editors
+.idea/
+.vscode/
+.DS_Store
+
