@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -382,8 +384,19 @@ def refresh_week(
     cached_views: dict[str, dict] = {}
     with EspnClient(settings) as client:
         for view in selected_views:
-            data = client.fetch_view(view)
-            path = client.save_view(view, data)
+            extra_params: dict[str, object] | None = None
+            suffix: str | None = None
+
+            if week is not None:
+                if view == "mRoster":
+                    extra_params = {"scoringPeriodId": week}
+                    suffix = f"week-{week}"
+                elif view == "mMatchup":
+                    extra_params = {"matchupPeriodId": week}
+                    suffix = f"week-{week}"
+
+            data = client.fetch_view(view, params=extra_params)
+            path = client.save_view(view, data, suffix=suffix)
             cached_views[view] = data
             click.echo(f"Saved {view} → {path}")
 
@@ -455,5 +468,125 @@ def refresh_week(
         f"Weekly scores → {scores_path} ({len(scored)} rows; {active_count} counted for scoring)"
     )
 
+
+@cli.group()
+def audit() -> None:
+    """Validation helpers."""
+
+
+@audit.command("week")
+@click.option("--season", type=int, default=None, help="Season to audit (defaults to ESPn season in .env).")
+@click.option("--week", type=int, required=True, help="Week number to audit.")
+@click.option("--show-matches", is_flag=True, help="Display matching totals in addition to discrepancies.")
+@click.option(
+    "--env-file",
+    type=click.Path(path_type=Path, dir_okay=False, exists=False, readable=True),
+    default=".env",
+    show_default=True,
+    help="Path to the .env file to load.",
+)
+def audit_week(season: int | None, week: int, show_matches: bool, env_file: Path) -> None:
+    """Compare weekly outputs against ESPN snapshots and schedule totals."""
+
+    settings = get_settings(env_file)
+    target_season = season or settings.espn_season
+    if target_season is None:
+        raise click.BadParameter("Season must be provided via --season or ESPn season in .env")
+
+    base_out = settings.data_root / "out" / "espn" / str(target_season)
+    base_raw = settings.data_root / "raw" / "espn" / str(target_season)
+
+    teams_path = base_out / "teams.csv"
+    schedule_path = base_out / "schedule.csv"
+    scores_path = base_out / f"weekly_scores_{target_season}_week_{week}.csv"
+    snapshot_path = base_raw / f"view-mRoster-week-{week}.json"
+
+    for path in (teams_path, schedule_path, scores_path, snapshot_path):
+        if not path.exists():
+            raise click.FileError(str(path), hint="Required artifact missing; run refresh/build first.")
+
+    teams: dict[int, str] = {}
+    with teams_path.open(newline="") as fh:
+        for row in csv.DictReader(fh):
+            teams[int(row["team_id"])] = row["team_name"]
+
+    scored_rows: list[dict[str, str]] = []
+    with scores_path.open(newline="") as fh:
+        for row in csv.DictReader(fh):
+            if row.get("counts_for_score", "").lower() == "true":
+                scored_rows.append(row)
+
+    schedule_totals: dict[int, float] = {}
+    with schedule_path.open(newline="") as fh:
+        for row in csv.DictReader(fh):
+            if int(row.get("week", 0)) != week:
+                continue
+            schedule_totals[int(row["home_team_id"])] = float(row.get("home_points") or 0)
+            schedule_totals[int(row["away_team_id"])] = float(row.get("away_points") or 0)
+
+    snapshot = json.loads(snapshot_path.read_text())
+    espn_applied: dict[int, float] = {}
+    for team in snapshot.get("teams", []):
+        for entry in team.get("roster", {}).get("entries", []):
+            player = entry.get("playerPoolEntry", {}).get("player", {})
+            pid = player.get("id")
+            if pid is None:
+                continue
+            stats = player.get("stats", [])
+            record = next(
+                (
+                    item
+                    for item in stats
+                    if item.get("scoringPeriodId") == week and item.get("statSourceId") == 0
+                ),
+                None,
+            )
+            if record is not None:
+                espn_applied[int(pid)] = float(record.get("appliedTotal", 0.0))
+
+    per_team: dict[int, float] = {}
+    per_player_diff: dict[int, list[tuple[str, float, float, float]]] = {}
+    for row in scored_rows:
+        team_id = int(row["team_id"])
+        total = float(row.get("score_total") or 0)
+        per_team[team_id] = per_team.get(team_id, 0.0) + total
+
+        pid_raw = row.get("espn_player_id")
+        if not pid_raw:
+            continue
+        try:
+            pid = int(float(pid_raw))
+        except ValueError:
+            continue
+        espn_total = espn_applied.get(pid)
+        if espn_total is None:
+            continue
+        diff = total - espn_total
+        if abs(diff) > 1e-6:
+            per_player_diff.setdefault(team_id, []).append((row["player_name"], total, espn_total, diff))
+
+    click.echo(f"Audit results · season {target_season} · week {week}")
+    click.echo("Player comparisons vs ESPN snapshot:")
+    if per_player_diff:
+        for team_id in sorted(per_player_diff):
+            click.echo(f"  {teams.get(team_id, str(team_id))}:")
+            for name, ours, espn_value, diff in per_player_diff[team_id]:
+                click.echo(
+                    f"    {name}: ours={ours:.2f} espn={espn_value:.2f} diff={diff:+.2f}"
+                )
+    else:
+        click.echo("  All starters match ESPN applied totals")
+
+    click.echo("\nTeam totals vs ESPN schedule:")
+    for team_id in sorted(teams):
+        if team_id not in schedule_totals:
+            continue
+        ours_total = per_team.get(team_id, 0.0)
+        espn_total = schedule_totals[team_id]
+        diff = round(ours_total - espn_total, 2)
+        if diff != 0 or show_matches:
+            click.echo(
+                f"  {teams[team_id]}: ours={ours_total:.2f} espn={espn_total:.2f} diff={diff:+.2f}"
+            )
 
 __all__ = ["cli"]

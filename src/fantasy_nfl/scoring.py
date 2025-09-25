@@ -18,9 +18,16 @@ class BonusRule:
 
 
 @dataclass(frozen=True)
+class UnitRule:
+    unit: float
+    points: float
+
+
+@dataclass(frozen=True)
 class ScoringConfig:
     include_positions: set[str]
     weights: Dict[str, float]
+    unit_scoring: Dict[str, UnitRule]
     bonuses: Dict[str, List[BonusRule]]
     position_modifiers: Dict[str, Dict[str, float]]
 
@@ -45,6 +52,16 @@ class ScoringConfig:
                 rules.append(BonusRule(threshold=threshold, points=points))
             bonuses[str(stat)] = rules
 
+        unit_scoring: Dict[str, UnitRule] = {}
+        for stat, spec in (raw.get("unit_scoring") or {}).items():
+            if spec is None:
+                continue
+            unit = float(spec.get("unit", 0))
+            if unit <= 0:
+                raise ValueError(f"unit_scoring for stat '{stat}' must specify unit > 0")
+            points = float(spec.get("points", 0))
+            unit_scoring[str(stat)] = UnitRule(unit=unit, points=points)
+
         position_modifiers: Dict[str, Dict[str, float]] = {}
         for position, mapping in (raw.get("position_modifiers") or {}).items():
             if mapping is None:
@@ -56,6 +73,7 @@ class ScoringConfig:
         return cls(
             include_positions=include_positions,
             weights=weights,
+            unit_scoring=unit_scoring,
             bonuses=bonuses,
             position_modifiers=position_modifiers,
         )
@@ -64,6 +82,7 @@ class ScoringConfig:
     def required_stats(self) -> set[str]:
         stats: set[str] = set(self.weights.keys())
         stats.update(self.bonuses.keys())
+        stats.update(self.unit_scoring.keys())
         for mapping in self.position_modifiers.values():
             stats.update(mapping.keys())
         return stats
@@ -157,6 +176,11 @@ class ScoreEngine:
         for stat, weight in self.config.weights.items():
             values = pd.to_numeric(df.get(stat, 0.0), errors="coerce").fillna(0.0)
             total = total.add(values * weight, fill_value=0.0)
+
+        for stat, rule in self.config.unit_scoring.items():
+            values = pd.to_numeric(df.get(stat, 0.0), errors="coerce").fillna(0.0)
+            units = (values // rule.unit).astype(float)
+            total = total.add(units * rule.points, fill_value=0.0)
         return total
 
     def _calculate_bonuses(self, df: pd.DataFrame) -> pd.Series:

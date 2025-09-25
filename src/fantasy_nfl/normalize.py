@@ -34,7 +34,7 @@ LINEUP_SLOT_NAMES: Dict[int, str] = {
     20: "BE",
     21: "IR",
     22: "FLEX",
-    23: "EDR",
+    23: "FLEX",
     24: "Rookie",
     25: "Taxi",
     26: "ER",

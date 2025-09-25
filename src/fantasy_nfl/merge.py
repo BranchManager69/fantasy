@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import logging
 import shutil
 from pathlib import Path
@@ -9,22 +10,46 @@ from typing import Iterable, Optional
 import pandas as pd
 
 from .pbp import PbpAggregator
+from .normalize import LINEUP_SLOT_NAMES
 from .settings import AppSettings
 
 STAT_COLUMNS = [
     "passing_yards",
     "passing_tds",
     "passing_int",
+    "passing_two_point_conversion",
+    "passing_long_td",
     "rushing_yards",
     "rushing_tds",
+    "rushing_two_point_conversion",
+    "rushing_long_td",
     "receptions",
     "receiving_yards",
     "receiving_tds",
+    "receiving_two_point_conversion",
+    "receiving_long_td",
     "fumbles_lost",
     "sacks",
     "fantasy_points",
     "fantasy_points_ppr",
 ]
+
+
+ESPN_STAT_CODE_MAP = {
+    "passing_yards": "3",
+    "passing_tds": "4",
+    "passing_int": "20",
+    "passing_long_td": "16",  # 50+ yard passing TD bonus
+    "rushing_yards": "24",
+    "rushing_tds": "25",
+    "rushing_two_point_conversion": "19",
+    "receptions": "41",
+    "receiving_yards": "42",
+    "receiving_tds": "43",
+    "receiving_two_point_conversion": "44",
+    "receiving_long_td": "46",
+    "fumbles_lost": "72",
+}
 
 
 @dataclass
@@ -137,7 +162,108 @@ class DataAssembler:
         weekly_subset.rename(columns={"season": "stat_season", "week": "stat_week"}, inplace=True)
 
         merged = roster.merge(weekly_subset, how="left", on="player_id", suffixes=("", "_stat"))
+
+        if week is not None:
+            merged = self._fill_missing_stats_with_espn(merged, season, week)
+
         output_path = self.weekly_output_path(season, week)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         merged.to_csv(output_path, index=False)
+        return merged
+
+    def _fill_missing_stats_with_espn(self, merged: pd.DataFrame, season: int, week: int) -> pd.DataFrame:
+        """Populate missing stat columns using ESPN roster snapshots for the week."""
+
+        snapshot_path = self.settings.data_root / "raw" / "espn" / str(season) / f"view-mRoster-week-{week}.json"
+        if not snapshot_path.exists():
+            LOGGER = logging.getLogger(__name__)
+            LOGGER.warning("ESPN week snapshot %s missing; cannot backfill stats.", snapshot_path)
+            return merged
+
+        try:
+            snapshot = json.loads(snapshot_path.read_text())
+        except json.JSONDecodeError:
+            LOGGER = logging.getLogger(__name__)
+            LOGGER.warning("Failed to parse %s; skipping ESPN stat backfill.", snapshot_path)
+            return merged
+
+        espn_stats: dict[str, dict[str, float]] = {}
+        espn_lineups: dict[str, int] = {}
+        for team in snapshot.get("teams", []):
+            entries = team.get("roster", {}).get("entries", [])
+            for entry in entries:
+                player_entry = entry.get("playerPoolEntry", {})
+                player = player_entry.get("player", {})
+                espn_player_id = player.get("id")
+                if espn_player_id is None:
+                    continue
+                lineup_slot_id = entry.get("lineupSlotId")
+                if lineup_slot_id is not None:
+                    espn_lineups[str(espn_player_id)] = lineup_slot_id
+                stats_list = player.get("stats", [])
+                stat_record = next(
+                    (
+                        item
+                        for item in stats_list
+                        if item.get("scoringPeriodId") == week and item.get("statSourceId") == 0
+                    ),
+                    None,
+                )
+                if not stat_record:
+                    continue
+                espn_stats[str(espn_player_id)] = stat_record.get("stats", {})
+
+        if not espn_stats:
+            return merged
+
+        for column in ESPN_STAT_CODE_MAP.keys():
+            if column not in merged.columns:
+                merged[column] = float("nan")
+
+        conversion_columns = {
+            "passing_two_point_conversion",
+            "rushing_two_point_conversion",
+            "receiving_two_point_conversion",
+        }
+
+        for idx in merged.index:
+            player_id = merged.at[idx, "player_id"]
+            espn_player_id = merged.at[idx, "espn_player_id"]
+            stats = None
+            if not isinstance(espn_player_id, str):
+                key = str(int(espn_player_id)) if pd.notna(espn_player_id) else None
+            else:
+                key = espn_player_id
+            if key and key in espn_stats:
+                stats = espn_stats[key]
+            if not stats and isinstance(player_id, str) and player_id.endswith(".0"):
+                stats = espn_stats.get(player_id.split(".")[0])
+            if not stats:
+                continue
+
+            for column, code in ESPN_STAT_CODE_MAP.items():
+                value = stats.get(code)
+                if value is None:
+                    continue
+                merged.at[idx, column] = float(value)
+
+            # Ensure we stamp the scoring week if nflverse left it blank.
+            stat_week_value = merged.at[idx, "stat_week"] if "stat_week" in merged.columns else None
+            if pd.isna(stat_week_value) or str(stat_week_value).strip() == "":
+                merged.at[idx, "stat_week"] = week
+
+            # Align lineup slots and scoring period with ESPN snapshot for this week.
+            slot_id = None
+            if key and key in espn_lineups:
+                slot_id = espn_lineups[key]
+            elif isinstance(player_id, str) and player_id.endswith(".0"):
+                slot_id = espn_lineups.get(player_id.split(".")[0])
+
+            if slot_id is not None:
+                merged.at[idx, "lineup_slot_id"] = slot_id
+                merged.at[idx, "lineup_slot"] = LINEUP_SLOT_NAMES.get(slot_id, str(slot_id))
+
+            if "scoring_period_id" in merged.columns:
+                merged.at[idx, "scoring_period_id"] = week
+
         return merged

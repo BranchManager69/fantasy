@@ -50,9 +50,13 @@ class EspnClient:
             cookies=self.cookies,
         )
 
-    def fetch_view(self, view: str) -> dict:
-        LOGGER.debug("Fetching ESPN view %s", view)
-        response = self._client.get(self.base_url, params={"view": view})
+    def fetch_view(self, view: str, params: dict[str, object] | None = None) -> dict:
+        query_params: dict[str, object] = {"view": view}
+        if params:
+            query_params.update(params)
+
+        LOGGER.debug("Fetching ESPN view %s with params %s", view, params)
+        response = self._client.get(self.base_url, params=query_params)
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:  # pragma: no cover - bubble meaningful message
@@ -64,10 +68,11 @@ class EspnClient:
     def fetch_views(self, views: Iterable[str]) -> dict[str, dict]:
         return {view: self.fetch_view(view) for view in views}
 
-    def save_view(self, view: str, data: dict) -> Path:
+    def save_view(self, view: str, data: dict, suffix: str | None = None) -> Path:
         out_dir = self.settings.data_root / "raw" / "espn" / str(self.settings.espn_season)
         out_dir.mkdir(parents=True, exist_ok=True)
-        path = out_dir / f"view-{view}.json"
+        filename = f"view-{view}{f'-{suffix}' if suffix else ''}.json"
+        path = out_dir / filename
         path.write_text(json.dumps(data, indent=2))
         LOGGER.info("Saved ESPN view %s to %s", view, path)
         return path

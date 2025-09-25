@@ -6,28 +6,43 @@ include_positions:
   - TE
   - FLEX
 weights:
-  passing_yards: 0.04         # 1 pt per 25 yards
   passing_tds: 4
   passing_int: -2
+  passing_two_point_conversion: 2
   rushing_yards: 0.1          # 1 pt per 10 yards
   rushing_tds: 6
+  rushing_two_point_conversion: 2
   receptions: 1
   receiving_yards: 0.1
   receiving_tds: 6
+  receiving_two_point_conversion: 2
   fumbles_lost: -2
-bonuses:
+unit_scoring:
   passing_yards:
-    - threshold: 300
-      points: 3
-  rushing_yards:
-    - threshold: 100
-      points: 3
-  receiving_yards:
-    - threshold: 100
-      points: 3
+    unit: 25
+    points: 1
+bonuses:
+  passing_long_td:
+    - threshold: 1
+      points: 1
+  rushing_long_td:
+    - threshold: 1
+      points: 1
+  receiving_long_td:
+    - threshold: 1
+      points: 1
+  kickoff_return_tds:
+    - threshold: 1
+      points: 6
+  punt_return_tds:
+    - threshold: 1
+      points: 6
 position_modifiers:
-  TE:
-    receptions: 0.5           # TE premium example; adjust as needed
+  QB: {}
+  RB: {}
+  WR: {}
+  TE: {}
+  FLEX: {}
 notes:
   - Update weights/bonuses to mirror your league settings.
   - Remove categories you do not use; the scorer will ignore missing stats.

@@ -44,6 +44,13 @@ export type WeekSnapshot = {
   matchups: MatchupSummary[];
   teamSummaries: TeamWeekSummary[];
   topPerformers: PlayerPerformance[];
+  generatedAt: string | null;
+  metrics: {
+    averagePoints: number;
+    medianPoints: number;
+    highScore: number;
+    lowScore: number;
+  };
 };
 
 type RawTeamRecord = {
@@ -140,8 +147,12 @@ async function loadTeams(season: number): Promise<Map<number, TeamInfo>> {
   return teams;
 }
 
+function weeklyScoresPath(season: number, week: number): string {
+  return path.join(seasonDir(season), `weekly_scores_${season}_week_${week}.csv`);
+}
+
 async function loadWeeklyRows(season: number, week: number): Promise<RawWeeklyRow[]> {
-  const weeklyPath = path.join(seasonDir(season), `weekly_scores_${season}_week_${week}.csv`);
+  const weeklyPath = weeklyScoresPath(season, week);
   const csv = await fs.readFile(weeklyPath, "utf-8").catch(() => "");
   if (!csv) {
     return [];
@@ -261,6 +272,10 @@ export async function getLatestWeekSnapshot(): Promise<WeekSnapshot | null> {
     return null;
   }
 
+  const weeklyFileStatPromise = fs
+    .stat(weeklyScoresPath(season, week))
+    .catch(() => null);
+
   const weeklyRows = await loadWeeklyRows(season, week);
   if (weeklyRows.length === 0) {
     return null;
@@ -273,6 +288,8 @@ export async function getLatestWeekSnapshot(): Promise<WeekSnapshot | null> {
   const teamSummaries = Array.from(summariesMap.values()).sort(
     (a, b) => b.total_points - a.total_points,
   );
+
+  const metrics = summarizeTeamMetrics(teamSummaries);
 
   const topPerformers = weeklyRows
     .map((row) => ({
@@ -287,11 +304,47 @@ export async function getLatestWeekSnapshot(): Promise<WeekSnapshot | null> {
     .sort((a, b) => b.fantasy_points - a.fantasy_points)
     .slice(0, 12);
 
+  const weeklyFileStat = await weeklyFileStatPromise;
+
   return {
     season,
     week,
     matchups,
     teamSummaries,
     topPerformers,
+    generatedAt: weeklyFileStat ? weeklyFileStat.mtime.toISOString() : null,
+    metrics,
+  };
+}
+
+function summarizeTeamMetrics(teamSummaries: TeamWeekSummary[]): WeekSnapshot["metrics"] {
+  if (teamSummaries.length === 0) {
+    return {
+      averagePoints: 0,
+      medianPoints: 0,
+      highScore: 0,
+      lowScore: 0,
+    };
+  }
+
+  const totals = teamSummaries.map((summary) => summary.total_points);
+  const sum = totals.reduce((acc, value) => acc + value, 0);
+  const average = sum / totals.length;
+
+  const sortedTotals = [...totals].sort((a, b) => a - b);
+  const mid = Math.floor(sortedTotals.length / 2);
+  const median =
+    sortedTotals.length % 2 === 0
+      ? (sortedTotals[mid - 1] + sortedTotals[mid]) / 2
+      : sortedTotals[mid];
+
+  const high = Math.max(...sortedTotals);
+  const low = Math.min(...sortedTotals);
+
+  return {
+    averagePoints: Number(average.toFixed(2)),
+    medianPoints: Number(median.toFixed(2)),
+    highScore: Number(high.toFixed(2)),
+    lowScore: Number(low.toFixed(2)),
   };
 }
