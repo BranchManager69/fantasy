@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import logging
+import shutil
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -112,7 +113,19 @@ class DataAssembler:
                 "Weekly stats file %s missing; generating from play-by-play data.", weekly_path
             )
             aggregator = PbpAggregator(self.settings)
-            weekly_path = aggregator.build_weekly_stats(season)
+            pbp_path = aggregator.build_weekly_stats(season)
+            if pbp_path.exists():
+                try:
+                    shutil.copy2(pbp_path, weekly_path)
+                except OSError:
+                    LOGGER.exception(
+                        "Failed to mirror %s to %s; continuing with play-by-play artifact only.",
+                        pbp_path,
+                        weekly_path,
+                    )
+                    weekly_path = pbp_path
+            else:
+                weekly_path = pbp_path
 
         weekly = pd.read_csv(weekly_path)
         if week is not None:

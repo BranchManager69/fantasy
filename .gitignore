@@ -11,6 +11,16 @@ venv/
 # Local tooling
 .poetry-cache/
 
+# Node / frontend tooling
+node_modules/
+npm-debug.log*
+.pnpm-store/
+.turbo/
+.next/
+apps/web/node_modules/
+apps/web/.next/
+apps/web/.turbo/
+
 # Project data
 .env
 .env.*
@@ -26,4 +36,3 @@ htmlcov/
 .idea/
 .vscode/
 .DS_Store
-

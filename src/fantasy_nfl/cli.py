@@ -336,4 +336,124 @@ def score_week(season: int | None, week: int, config_path: Path, env_file: Path)
     )
 
 
+@cli.command("refresh-week")
+@click.option("--season", type=int, default=None, help="Season to refresh (defaults to ESPn season in .env).")
+@click.option(
+    "--week",
+    type=int,
+    default=None,
+    help="Week number to refresh; defaults to current scoring period reported by ESPN.",
+)
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True),
+    default=Path("config/scoring.yaml"),
+    show_default=True,
+    help="Path to the scoring configuration file.",
+)
+@click.option("--force-nflverse", is_flag=True, help="Force re-download of nflverse datasets.")
+@click.option("--skip-score", is_flag=True, help="Skip scoring stage (useful for quick builds).")
+@click.option(
+    "--env-file",
+    type=click.Path(path_type=Path, dir_okay=False, exists=False, readable=True),
+    default=".env",
+    show_default=True,
+    help="Path to the .env file to load.",
+)
+def refresh_week(
+    season: int | None,
+    week: int | None,
+    config_path: Path,
+    force_nflverse: bool,
+    skip_score: bool,
+    env_file: Path,
+) -> None:
+    """Run pull → normalize → merge → score as a single step for a given week."""
+
+    settings = get_settings(env_file)
+    target_season = season or settings.espn_season
+    if target_season is None:
+        raise click.BadParameter("Season must be provided via --season or ESPn season in .env")
+
+    settings.espn_season = target_season
+
+    selected_views = ensure_views(None)
+    cached_views: dict[str, dict] = {}
+    with EspnClient(settings) as client:
+        for view in selected_views:
+            data = client.fetch_view(view)
+            path = client.save_view(view, data)
+            cached_views[view] = data
+            click.echo(f"Saved {view} → {path}")
+
+    snapshot = EspnSnapshot(settings)
+    team_view = cached_views.get("mTeam") or snapshot.load_view("mTeam")
+    roster_view = cached_views.get("mRoster") or snapshot.load_view("mRoster")
+    matchup_view = cached_views.get("mMatchup") or snapshot.load_view("mMatchup")
+
+    teams_df = normalize_teams(team_view)
+    roster_df = normalize_roster(roster_view)
+    schedule_df = normalize_schedule(matchup_view)
+
+    out_dir = settings.data_root / "out" / "espn" / str(target_season)
+    teams_csv = write_dataframe(teams_df, out_dir / "teams.csv")
+    roster_csv = write_dataframe(roster_df, out_dir / "roster.csv")
+    schedule_csv = write_dataframe(schedule_df, out_dir / "schedule.csv")
+
+    click.echo(f"Saved teams → {teams_csv}")
+    click.echo(f"Saved roster → {roster_csv}")
+    click.echo(f"Saved schedule → {schedule_csv}")
+
+    inferred_week = week
+    if inferred_week is None and isinstance(roster_view, dict):
+        inferred_week = roster_view.get("scoringPeriodId")
+    if inferred_week is None:
+        raise click.BadParameter(
+            "Week must be provided when ESPN roster does not report a scoring period"
+        )
+
+    try:
+        target_week = int(inferred_week)
+    except (TypeError, ValueError) as exc:
+        raise click.BadParameter(f"Unable to determine week from value {inferred_week!r}") from exc
+
+    downloader = NflverseDownloader(settings)
+    players_csv = downloader.fetch_players(force=force_nflverse)
+    click.echo(f"Players → {players_csv}")
+
+    weekly_csv: Path | None = None
+    try:
+        weekly_csv = downloader.fetch_weekly(target_season, force=force_nflverse)
+    except Exception as exc:  # pragma: no cover - network/runtime dependent
+        click.echo(
+            f"Weekly stats {target_season} download failed ({exc}); falling back to play-by-play aggregation.",
+            err=True,
+        )
+    else:
+        click.echo(f"Weekly stats {target_season} → {weekly_csv}")
+
+    assembler = DataAssembler(settings)
+    merged = assembler.merge_with_weekly(target_season, target_week)
+    roster_enriched_path = assembler.roster_enriched_path()
+    weekly_output_path = assembler.weekly_output_path(target_season, target_week)
+
+    if roster_enriched_path.exists():
+        click.echo(f"Roster enriched → {roster_enriched_path}")
+    click.echo(f"Weekly dataset → {weekly_output_path} ({len(merged)} rows)")
+
+    if skip_score:
+        click.echo("Skipping scoring stage (per --skip-score)")
+        return
+
+    config = ScoringConfig.load(config_path)
+    engine = ScoreEngine(settings, config)
+    scored, scores_path = engine.score_week(target_season, target_week)
+
+    active_count = int(scored["counts_for_score"].sum()) if not scored.empty else 0
+    click.echo(
+        f"Weekly scores → {scores_path} ({len(scored)} rows; {active_count} counted for scoring)"
+    )
+
+
 __all__ = ["cli"]

@@ -1,0 +1,16 @@
+<svg width="720" height="200" viewBox="0 0 720 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="720" height="200" rx="24" fill="url(#bg)"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="720" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F2937"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="120" y1="60" x2="600" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="0.5" stop-color="#60A5FA"/>
+      <stop offset="1" stop-color="#F472B6"/>
+    </linearGradient>
+  </defs>
+  <text x="50%" y="48%" text-anchor="middle" font-family="'Fira Sans', 'Segoe UI', sans-serif" font-size="58" font-weight="700" fill="url(#accent)">Fantasy League Engine</text>
+  <text x="50%" y="72%" text-anchor="middle" font-family="'Fira Sans', 'Segoe UI', sans-serif" font-size="24" font-weight="400" fill="#D1D5DB">Real data. Real hype. Real receipts.</text>
+</svg>
