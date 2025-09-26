@@ -131,6 +131,13 @@ class ScoreEngine:
         scored.to_csv(output_path, index=False)
         return scored, output_path
 
+    def score_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Apply scoring rules to an arbitrary dataframe."""
+
+        working = df.copy()
+        self._rename_conflicting_columns(working)
+        return self._apply_scoring(working)
+
     def _rename_conflicting_columns(self, df: pd.DataFrame) -> None:
         rename_map = {}
         if "fantasy_points" in df.columns:

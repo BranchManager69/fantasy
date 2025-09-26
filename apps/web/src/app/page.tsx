@@ -1,8 +1,15 @@
 import {
-  getLatestWeekSnapshot,
-  type MatchupSummary,
-  type TeamWeekSummary,
-} from "@/lib/data";
+  type MonteCarloSummary,
+  type MonteCarloTeamSummary,
+  type RestOfSeasonSimulation,
+  type SimulationStanding,
+  type SimulationTeamMeta,
+  type SimulationTeamScheduleEntry,
+  getLatestSimulation,
+} from "@/lib/simulator-data";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function formatOwners(owners: string[]): string {
   if (owners.length === 0) return "Unclaimed";
@@ -11,38 +18,10 @@ function formatOwners(owners: string[]): string {
   return `${owners[0]}, ${owners[1]} +`;
 }
 
-function resolveMatchupDelta(matchup: MatchupSummary): number | null {
-  if (!matchup.home || !matchup.away) {
-    return null;
-  }
-  const delta = Math.abs(matchup.home.total_points - matchup.away.total_points);
-  return Number(delta.toFixed(2));
-}
-
-function pickClosestMatchup(matchups: MatchupSummary[]) {
-  return matchups
-    .filter((matchup) => matchup.home && matchup.away)
-    .map((matchup) => ({ matchup, delta: resolveMatchupDelta(matchup) ?? Number.POSITIVE_INFINITY }))
-    .sort((a, b) => a.delta - b.delta)[0]?.matchup;
-}
-
-function resolveMatchupStatus(matchup: MatchupSummary): "final" | "live" | "upcoming" {
-  if (matchup.winner && matchup.home && matchup.away) {
-    return "final";
-  }
-  if ((matchup.home?.total_points ?? 0) > 0 || (matchup.away?.total_points ?? 0) > 0) {
-    return "live";
-  }
-  return "upcoming";
-}
-
-function formatTimestamp(timestamp: string | null): string {
-  if (!timestamp) {
-    return "Awaiting first sync";
-  }
+function formatTimestamp(timestamp: string): string {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) {
-    return "Awaiting first sync";
+    return "Unknown";
   }
   return date.toLocaleString("en-US", {
     month: "short",
@@ -52,258 +31,215 @@ function formatTimestamp(timestamp: string | null): string {
   });
 }
 
-function differentialFromAverage(total: number, average: number): string {
-  const diff = total - average;
-  const rounded = Number(diff.toFixed(1));
-  if (Math.abs(rounded) < 0.1) {
-    return "On league pace";
-  }
-  if (rounded > 0) {
-    return `+${rounded.toFixed(1)} vs league avg`;
-  }
-  return `${rounded.toFixed(1)} vs league avg`;
+function formatRecord(record: SimulationStanding["projected_record"]): string {
+  return `${record.wins.toFixed(1)} – ${record.losses.toFixed(1)}`;
 }
 
-function trailingNeedCopy(trailer: TeamWeekSummary, delta: number): string {
-  if (delta < 1) {
-    return `${trailer.team.name} needs a single play to steal it.`;
-  }
-  if (delta < 10) {
-    return `${trailer.team.name} is within ${delta.toFixed(1)} pts—still in striking range.`;
-  }
-  return `${trailer.team.name} must erase ${delta.toFixed(1)} pts.`;
+function probabilityClass(probability: number): string {
+  if (probability >= 0.6) return "cell cell--favorable";
+  if (probability <= 0.4) return "cell cell--underdog";
+  return "cell cell--coinflip";
 }
 
-function topPerformerContext(
-  playerTeam: TeamWeekSummary | undefined,
-  points: number,
-): string {
-  if (!playerTeam) {
-    return `${points.toFixed(1)} pts`;
+function probabilityLabel(probability: number): string {
+  const pct = Math.round(probability * 100);
+  return `${pct}% win odds`;
+}
+
+function formatMargin(margin: number): string {
+  if (Number.isNaN(margin)) return "";
+  if (Math.abs(margin) < 0.25) return "coin flip";
+  if (margin > 0) return `favored by ${margin.toFixed(1)}`;
+  return `needs ${Math.abs(margin).toFixed(1)}`;
+}
+
+function buildScheduleIndex(
+  teamSchedule: RestOfSeasonSimulation["team_schedule"],
+): Map<number, Map<number, SimulationTeamScheduleEntry>> {
+  const index = new Map<number, Map<number, SimulationTeamScheduleEntry>>();
+  for (const [teamIdRaw, entries] of Object.entries(teamSchedule)) {
+    const teamId = Number(teamIdRaw);
+    if (!Number.isFinite(teamId)) continue;
+    const weekMap = new Map<number, SimulationTeamScheduleEntry>();
+    for (const entry of entries) {
+      weekMap.set(entry.week, entry);
+    }
+    index.set(teamId, weekMap);
   }
-  return `${points.toFixed(1)} pts · ${playerTeam.team.name}`;
+  return index;
+}
+
+function buildMonteCarloIndex(
+  monteCarlo?: MonteCarloSummary,
+): Map<number, MonteCarloTeamSummary> | null {
+  if (!monteCarlo) {
+    return null;
+  }
+  const map = new Map<number, MonteCarloTeamSummary>();
+  for (const entry of monteCarlo.teams) {
+    map.set(entry.team.team_id, entry);
+  }
+  return map;
+}
+
+function WeekHeader({ weeks }: { weeks: number[] }) {
+  return (
+    <thead>
+      <tr>
+        <th scope="col">Team Outlook</th>
+        {weeks.map((week) => (
+          <th key={week} scope="col">
+            Week {week}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  );
+}
+
+function TeamRow({
+  team,
+  record,
+  weeks,
+  scheduleIndex,
+  teamsById,
+  monteCarlo,
+}: {
+  team: SimulationTeamMeta;
+  record: SimulationStanding["projected_record"];
+  weeks: number[];
+  scheduleIndex: Map<number, Map<number, SimulationTeamScheduleEntry>>;
+  teamsById: Map<number, SimulationTeamMeta>;
+  monteCarlo?: Map<number, MonteCarloTeamSummary> | null;
+}) {
+  const weeklyMap = scheduleIndex.get(team.team_id) ?? new Map();
+  const mc = monteCarlo?.get(team.team_id ?? -1) ?? null;
+  const playoffCopy = mc ? `${Math.round(mc.playoff_odds * 100)}% playoff odds` : null;
+  const seedCopy = mc && mc.top_seed_odds > 0.01 ? `${Math.round(mc.top_seed_odds * 100)}% for #1 seed` : null;
+  const avgWinsCopy = mc ? `${mc.average_wins.toFixed(1)} avg wins` : null;
+  return (
+    <tr>
+      <th scope="row">
+        <div className="team-heading">
+          <span className="team-heading__name">{team.name}</span>
+          <div className="team-heading__meta">
+            <span className="team-heading__record">{formatRecord(record)}</span>
+            {avgWinsCopy ? <span className="team-heading__avg">{avgWinsCopy}</span> : null}
+            {playoffCopy ? <span className="team-heading__prob">{playoffCopy}</span> : null}
+            {seedCopy ? <span className="team-heading__seed">{seedCopy}</span> : null}
+          </div>
+          <span className="team-heading__owners">{formatOwners(team.owners)}</span>
+        </div>
+      </th>
+      {weeks.map((week) => {
+        const entry = weeklyMap.get(week);
+        if (!entry) {
+          return (
+            <td key={week} className="cell cell--empty">
+              —
+            </td>
+          );
+        }
+        const opponent = teamsById.get(entry.opponent_team_id);
+        const opponentLabel = opponent ? opponent.abbrev || opponent.name : `Team ${entry.opponent_team_id}`;
+        const direction = entry.is_home ? "vs" : "@";
+        const cellClass = probabilityClass(entry.win_probability);
+        const winPct = Math.round(entry.win_probability * 100);
+        const marginCopy = formatMargin(entry.projected_margin);
+        return (
+          <td key={week} className={`cell ${cellClass}`}>
+            <div className="cell__body">
+              <div className="cell__points">{entry.projected_points.toFixed(1)} pts</div>
+              <div className="cell__opponent-row">
+                <span className="cell__opponent-dir">{direction}</span>
+                <span className="cell__opponent-name">{opponentLabel}</span>
+                <span className="cell__opponent-opp">{entry.opponent_projected_points.toFixed(1)} pts</span>
+              </div>
+              <div className="cell__margin">{marginCopy}</div>
+              <div className="cell__prob">
+                <span className="cell__prob-value">{probabilityLabel(entry.win_probability)}</span>
+                <div className="cell__prob-bar">
+                  <span style={{ width: `${winPct}%` }} />
+                </div>
+              </div>
+            </div>
+          </td>
+        );
+      })}
+    </tr>
+  );
 }
 
 export default async function Home() {
-  const snapshot = await getLatestWeekSnapshot();
+  const simulation = await getLatestSimulation();
 
-  if (!snapshot) {
+  if (!simulation) {
     return (
-      <main className="page">
-        <section className="empty">
-          <h1>No weekly artifacts yet</h1>
+      <main className="shell">
+        <section className="empty-state">
+          <h1>No simulation artifacts yet</h1>
           <p>
-            Run your backend refresh (`poetry run fantasy refresh-week --week N`) and reload. As soon as the CSVs land under
-            <code>data/out/espn/&lt;season&gt;</code> this dashboard lights up with the real numbers.
+            Kick off a backend refresh to build the rest-of-season projection grid. Run
+            <code>poetry run fantasy refresh-all</code> and then reload this page.
           </p>
         </section>
       </main>
     );
   }
 
-  const { season, week, matchups, teamSummaries, topPerformers, generatedAt, metrics } = snapshot;
-
-  const marquee = pickClosestMatchup(matchups);
-  const topTotalPoints = teamSummaries.length > 0 ? teamSummaries[0].total_points : 1;
-  const standingsLow = teamSummaries[teamSummaries.length - 1];
-  const scoreboard = [...matchups]
-    .filter((matchup) => matchup.home && matchup.away)
-    .sort((a, b) => {
-      const statusOrder = { live: 0, final: 1, upcoming: 2 } as const;
-      const aStatus = statusOrder[resolveMatchupStatus(a)];
-      const bStatus = statusOrder[resolveMatchupStatus(b)];
-      if (aStatus !== bStatus) {
-        return aStatus - bStatus;
-      }
-      const deltaA = resolveMatchupDelta(a) ?? Number.POSITIVE_INFINITY;
-      const deltaB = resolveMatchupDelta(b) ?? Number.POSITIVE_INFINITY;
-      return deltaA - deltaB;
-    });
+  const standings = simulation.standings;
+  const orderedTeams = standings.map((entry) => entry.team);
+  const weeks = [...new Set(simulation.weeks.map((week) => week.week))].sort((a, b) => a - b);
+  const teamsById = new Map(simulation.teams.map((team) => [team.team_id, team] as const));
+  const scheduleIndex = buildScheduleIndex(simulation.team_schedule);
+  const monteCarlo = simulation.monte_carlo;
+  const monteCarloIndex = buildMonteCarloIndex(monteCarlo);
 
   return (
-    <main className="page">
-      <header className="hero">
-        <div className="hero__meta">
-          <span className="hero__eyebrow">Season {season} · Week {week}</span>
-          <h1>League Pulse</h1>
-          <p>
-            Live standings, sourced straight from the engine. Refresh the backend, reload the page, and watch the league narrative update in real time.
-          </p>
-        </div>
-        <div className="hero__metrics">
-          <div className="metric-card">
-            <span className="metric-card__label">League Average</span>
-            <strong>{metrics.averagePoints.toFixed(1)} pts</strong>
-            <span>Median {metrics.medianPoints.toFixed(1)} pts</span>
+    <main className="shell">
+      <section className="panel matrix-panel">
+        <header className="matrix-header">
+          <div className="matrix-header__left">
+            <h1>Season {simulation.season} · Weeks {simulation.start_week}–{simulation.end_week}</h1>
+            <span>Generated {formatTimestamp(simulation.generated_at)} · {simulation.weeks.length} weeks · {simulation.teams.length} teams</span>
           </div>
-          {teamSummaries[0] ? (
-            <div className="metric-card">
-              <span className="metric-card__label">High Score</span>
-              <strong>{metrics.highScore.toFixed(1)} pts</strong>
-              <span>{teamSummaries[0].team.name}</span>
+          {monteCarlo ? (
+            <div className="matrix-header__stats">
+              <span>{monteCarlo.iterations.toLocaleString()} Monte Carlo runs</span>
+              <span>{monteCarlo.playoff_slots} playoff slots</span>
+              {monteCarlo.random_seed !== null ? <span>Seed {monteCarlo.random_seed}</span> : null}
             </div>
           ) : null}
-          {standingsLow ? (
-            <div className="metric-card">
-              <span className="metric-card__label">Low Score</span>
-              <strong>{metrics.lowScore.toFixed(1)} pts</strong>
-              <span>{standingsLow.team.name}</span>
-            </div>
-          ) : null}
-          <div className="metric-card metric-card--timestamp">
-            <span className="metric-card__label">Last Sync</span>
-            <strong>{formatTimestamp(generatedAt)}</strong>
-            <span>Artifacts · data/out/espn/{season}</span>
-          </div>
-        </div>
-        {marquee && marquee.home && marquee.away ? (
-          <div className="hero__matchup">
-            <div className="hero__heading">Closest Battle</div>
-            <div className="hero__teams">
-              <div className="hero__team">
-                <h3>{marquee.home.team.name}</h3>
-                <span>{formatOwners(marquee.home.team.owners)}</span>
-              </div>
-              <div className="hero__score">
-                <strong>{marquee.home.total_points.toFixed(1)}</strong>
-                <span>vs</span>
-                <strong>{marquee.away.total_points.toFixed(1)}</strong>
-              </div>
-              <div className="hero__team hero__team--right">
-                <h3>{marquee.away.team.name}</h3>
-                <span>{formatOwners(marquee.away.team.owners)}</span>
-              </div>
-            </div>
-            <div className="hero__delta">
-              <span>{resolveMatchupDelta(marquee)?.toFixed(2)} pt gap</span>
-              <p>
-                {marquee.home.total_points >= marquee.away.total_points
-                  ? trailingNeedCopy(marquee.away, resolveMatchupDelta(marquee) ?? 0)
-                  : trailingNeedCopy(marquee.home, resolveMatchupDelta(marquee) ?? 0)}
-              </p>
-            </div>
-          </div>
-        ) : null}
-      </header>
-
-      <section className="section">
-        <header className="section__header">
-          <h2>Scoreboard</h2>
-          <p>Live games float to the top. Finals roll in once the engine exports.</p>
         </header>
-        <div className="matchups">
-          {scoreboard.map((matchup) => {
-            const home = matchup.home!;
-            const away = matchup.away!;
-            const leader = home.total_points >= away.total_points ? home : away;
-            const trailer = leader === home ? away : home;
-            const delta = resolveMatchupDelta(matchup) ?? 0;
-            const status = resolveMatchupStatus(matchup);
-
-            return (
-              <article className={`matchup-card matchup-card--${status}`} key={matchup.matchup_id}>
-                <header>
-                  <span className="matchup-card__status">
-                    {status === "final" ? "Final" : status === "live" ? "Live" : "Scheduled"}
-                  </span>
-                  <strong>{delta.toFixed(2)} pt {status === "final" ? "margin" : "lead"}</strong>
-                </header>
-                <div className="matchup-card__body">
-                  {[home, away].map((team) => {
-                    const isLeader = team === leader;
-                    return (
-                      <div
-                        key={team.team.team_id}
-                        className={`matchup-card__team${isLeader ? " matchup-card__team--leader" : ""}`}
-                      >
-                        <div className="matchup-card__scoreline">
-                          <div>
-                            <span className="matchup-card__team-name">{team.team.name}</span>
-                            <span className="matchup-card__owners">{formatOwners(team.team.owners)}</span>
-                          </div>
-                          <strong>{team.total_points.toFixed(1)}</strong>
-                        </div>
-                        {team.top_player ? (
-                          <p className="matchup-card__highlight">
-                            {team.top_player.player_name} · {team.top_player.fantasy_points.toFixed(1)} pts ({
-                              team.top_player.lineup_slot || team.top_player.espn_position
-                            })
-                          </p>
-                        ) : (
-                          <p className="matchup-card__highlight">Looking for a spark</p>
-                        )}
-                        {team.bench_points > 0 ? (
-                          <p className="matchup-card__bench">Bench potential: {team.bench_points.toFixed(1)} pts</p>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-                <footer>
-                  <span>
-                    {status === "final"
-                      ? `${leader.team.name} takes it by ${delta.toFixed(2)}.`
-                      : trailingNeedCopy(trailer, delta)}
-                  </span>
-                </footer>
-              </article>
-            );
-          })}
+        <div className="matrix-wrapper">
+          <table className="sim-matrix">
+            <WeekHeader weeks={weeks} />
+            <tbody>
+              {orderedTeams.map((team, index) => (
+                <TeamRow
+                  key={team.team_id}
+                  team={team}
+                  record={standings[index].projected_record}
+                  weeks={weeks}
+                  scheduleIndex={scheduleIndex}
+                  teamsById={teamsById}
+                  monteCarlo={monteCarloIndex}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
-      </section>
-
-      <section className="section section--grid">
-        <div className="section__header">
-          <h2>Top Performers</h2>
-          <p>Starter-only output ranked by fantasy points.</p>
-        </div>
-        <ul className="leaders">
-          {topPerformers.map((player, index) => {
-            const team = teamSummaries.find((summary) => summary.team.team_id === player.team_id);
-            return (
-              <li key={`${player.team_id}-${player.player_name}`} className="leaders__item">
-                <span className="leaders__rank">#{index + 1}</span>
-                <div className="leaders__body">
-                  <strong>{player.player_name}</strong>
-                  <span>{player.lineup_slot || player.espn_position}</span>
-                  <span className="leaders__meta">
-                    {topPerformerContext(team, player.fantasy_points)}
-                  </span>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="section__header">
-          <h2>Team Heat Index</h2>
-          <p>Starter totals ranked vs league average.</p>
-        </div>
-        <ul className="teams">
-          {teamSummaries.map((summary, index) => {
-            const width = `${Math.min((summary.total_points / topTotalPoints) * 100, 100)}%`;
-
-            return (
-              <li key={summary.team.team_id} className="teams__item">
-                <div className="teams__rank">#{index + 1}</div>
-                <div className="teams__header">
-                  <strong>{summary.team.name}</strong>
-                  <span>{formatOwners(summary.team.owners)}</span>
-                </div>
-                <div className="teams__bar">
-                  <span style={{ width }} />
-                </div>
-                <div className="teams__numbers">
-                  <strong>{summary.total_points.toFixed(1)} pts</strong>
-                  <em>{differentialFromAverage(summary.total_points, metrics.averagePoints)}</em>
-                </div>
-                {summary.bench_points > 0 ? (
-                  <div className="teams__bench">Bench potential: {summary.bench_points.toFixed(1)} pts</div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+        <footer className="legend">
+          <span>
+            <span className="legend__swatch legend__swatch--favorable" /> Favorable (&gt;60% win odds)
+          </span>
+          <span>
+            <span className="legend__swatch legend__swatch--coinflip" /> Tight contest (40–60%)
+          </span>
+          <span>
+            <span className="legend__swatch legend__swatch--underdog" /> Underdog (&lt;40% win odds)
+          </span>
+        </footer>
       </section>
     </main>
   );

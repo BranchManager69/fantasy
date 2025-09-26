@@ -16,7 +16,7 @@ LOGGER = logging.getLogger(__name__)
 BASE_URL = (
     "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}/segments/0/leagues/{league_id}"
 )
-DEFAULT_VIEWS = ("mSettings", "mTeam", "mRoster", "mMatchup")
+DEFAULT_VIEWS = ("mSettings", "mTeam", "mRoster", "mMatchup", "mTransactions2")
 
 
 class EspnAuthError(RuntimeError):

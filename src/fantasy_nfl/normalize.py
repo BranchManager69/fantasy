@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Mapping, Optional, Tuple
 
 import pandas as pd
 
@@ -55,6 +55,39 @@ POSITION_NAMES: Dict[int, str] = {
     10: "DB",
     11: "HC",
 }
+
+
+def _coerce_int(value: object) -> Optional[int]:
+    try:
+        if value is None or (isinstance(value, float) and pd.isna(value)):
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _stringify_id(value: object) -> Optional[str]:
+    if value is None or value == "":
+        return None
+    if isinstance(value, float):
+        if pd.isna(value):
+            return None
+        if value.is_integer():
+            return str(int(value))
+        return str(value)
+    return str(value)
+
+
+def _isoformat_or_none(value: object) -> Optional[str]:
+    if value in (None, ""):
+        return None
+    try:
+        timestamp = pd.to_datetime(value, unit="ms", utc=True, errors="coerce")
+    except (ValueError, TypeError, OverflowError):
+        return None
+    if pd.isna(timestamp):
+        return None
+    return timestamp.isoformat()
 
 
 @dataclass
@@ -145,6 +178,101 @@ def normalize_schedule(matchup_view: dict) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
+
+
+def normalize_transactions(
+    transactions_view: dict,
+    team_lookup: Mapping[int, str] | None = None,
+    player_lookup: Mapping[int, str] | None = None,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    team_lookup = dict(team_lookup or {})
+    player_lookup = dict(player_lookup or {})
+
+    season = transactions_view.get("seasonId")
+    transactions_rows: list[dict[str, object]] = []
+    items_rows: list[dict[str, object]] = []
+
+    for tx in transactions_view.get("transactions", []) or []:
+        transaction_id = (
+            _stringify_id(tx.get("id"))
+            or _stringify_id(tx.get("transactionId"))
+            or _stringify_id(tx.get("relatedTransactionId"))
+            or _stringify_id(tx.get("proposedDate"))
+        )
+        team_id = _coerce_int(tx.get("teamId"))
+        scoring_period = _coerce_int(tx.get("scoringPeriodId"))
+
+        proposed_by = tx.get("proposedBy")
+        proposed_by_member_id: Optional[int] = None
+        proposed_by_team_id: Optional[int] = None
+        if isinstance(proposed_by, dict):
+            proposed_by_member_id = _coerce_int(proposed_by.get("memberId") or proposed_by.get("id"))
+            proposed_by_team_id = _coerce_int(proposed_by.get("teamId"))
+        else:
+            proposed_by_member_id = _coerce_int(proposed_by)
+
+        executed_date = _isoformat_or_none(tx.get("executionDate"))
+        proposed_date = _isoformat_or_none(tx.get("proposedDate"))
+
+        transactions_rows.append(
+            {
+                "season": season,
+                "transaction_id": transaction_id,
+                "type": tx.get("type"),
+                "status": tx.get("status"),
+                "execution_type": tx.get("executionType"),
+                "is_pending": tx.get("isPending"),
+                "team_id": team_id,
+                "team_name": team_lookup.get(team_id),
+                "member_id": _coerce_int(tx.get("memberId")),
+                "proposed_by_member_id": proposed_by_member_id,
+                "proposed_by_team_id": proposed_by_team_id,
+                "proposed_by_team_name": team_lookup.get(proposed_by_team_id) if proposed_by_team_id else None,
+                "scoring_period_id": scoring_period,
+                "proposed_date": proposed_date,
+                "executed_date": executed_date,
+                "expiration_date": _isoformat_or_none(tx.get("expirationDate")),
+                "notes": tx.get("notes") or tx.get("comment"),
+            }
+        )
+
+        items = tx.get("items") or []
+        for item in items:
+            player = item.get("player") or {}
+            player_id = _coerce_int(item.get("playerId")) or _coerce_int(player.get("id"))
+            player_name = player.get("fullName") or player_lookup.get(player_id)
+            from_team_id = _coerce_int(item.get("fromTeamId"))
+            to_team_id = _coerce_int(item.get("toTeamId"))
+
+            lineup_slot_id = _coerce_int(item.get("lineupSlotId"))
+
+            items_rows.append(
+                {
+                    "season": season,
+                    "transaction_id": transaction_id,
+                    "item_id": _stringify_id(item.get("id")),
+                    "item_type": item.get("type"),
+                    "player_id": player_id,
+                    "player_name": player_name,
+                    "from_team_id": from_team_id,
+                    "from_team_name": team_lookup.get(from_team_id),
+                    "to_team_id": to_team_id,
+                    "to_team_name": team_lookup.get(to_team_id),
+                    "bid_amount": item.get("bidAmount"),
+                    "waiver_order": _coerce_int(item.get("waiverOrder")),
+                    "keeper_value": item.get("keeperValue"),
+                    "keeper_year": item.get("keeperYear"),
+                    "lineup_slot_id": lineup_slot_id,
+                    "lineup_slot": LINEUP_SLOT_NAMES.get(lineup_slot_id, str(lineup_slot_id) if lineup_slot_id is not None else None),
+                    "scoring_period_id": _coerce_int(item.get("scoringPeriodId")) or scoring_period,
+                    "is_pending": item.get("isPending"),
+                    "pending_transaction_id": _stringify_id(item.get("pendingTransactionId")),
+                }
+            )
+
+    transactions_df = pd.DataFrame(transactions_rows)
+    items_df = pd.DataFrame(items_rows)
+    return transactions_df, items_df
 
 
 def write_dataframe(df: pd.DataFrame, path: Path) -> Path:

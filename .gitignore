@@ -26,6 +26,7 @@ apps/web/.turbo/
 .env.*
 data/raw/
 data/out/
+data/in/
 
 # Test artifacts
 .pytest_cache/

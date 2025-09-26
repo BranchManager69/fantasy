@@ -27,6 +27,12 @@ export const dataRoot = path.join(repoRoot, "data");
 
 export const espnOutRoot = path.join(dataRoot, "out", "espn");
 
+export const simulationsOutRoot = path.join(dataRoot, "out", "simulations");
+
 export function seasonDir(season: string | number) {
   return path.join(espnOutRoot, String(season));
+}
+
+export function simulationSeasonDir(season: string | number) {
+  return path.join(simulationsOutRoot, String(season));
 }
