@@ -6,7 +6,7 @@
   <a href="#backend-quickstart">Backend Quickstart</a>
   · <a href="#architecture-overview">Architecture</a>
   · <a href="#data-artifacts">Data Artifacts</a>
-  · <a href="#frontend-roadmap">Frontend Roadmap</a>
+  · <a href="#frontend-snapshot">Frontend Snapshot</a>
   · <a href="#testing--quality">Testing</a>
   · <a href="#license">License</a>
 </p>
@@ -15,23 +15,23 @@
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-3776AB.svg" alt="Python 3.11+"></a>
-  <a href="https://nodejs.org/en/download"><img src="https://img.shields.io/badge/node-18%2B-3C873A.svg" alt="Node 18+ (planned frontend)"></a>
+  <a href="https://nodejs.org/en/download"><img src="https://img.shields.io/badge/node-18%2B-3C873A.svg" alt="Node 18+ (Next.js frontend)"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2F855A.svg" alt="MIT License"></a>
   <a href="docs/frontend-ux-data-contract.md"><img src="https://img.shields.io/badge/docs-UX%20+%20Data%20Contract-1D4ED8.svg" alt="UX & Data Contract"></a>
 </p>
 
 <p align="center">
-  Data pipeline + forthcoming frontend that turns decade-long fantasy leagues into a live, shareable hype engine—always driven by real ESPN/nflverse feeds.
+  Data pipeline + live frontend that turns decade-long fantasy leagues into a shareable hype engine—always driven by real ESPN/nflverse feeds.
 </p>
 
 ---
 
 ## Highlights
 
-- **Deterministic backend** – Python CLI ingests ESPN private leagues, normalizes snapshots, enriches with nflverse stats, and writes reproducible CSV outputs.
-- **Scoring engine ready** – custom scoring (PPR, bonuses, position modifiers) applied directly to weekly datasets for instant standings.
-- **Asset-aware** – plan for unified player/club imagery and AI-generated highlights tied to actual events.
-- **Future Next.js shell** – upcoming web experience will render only real artifacts produced by the CLI; no fabricated data paths.
+- **Deterministic backend** – Python CLI ingests ESPN private leagues, normalizes snapshots, enriches with nflverse stats, and writes reproducible CSV/JSON outputs.
+- **Custom scoring engine** – league-specific scoring (bonuses, position modifiers, two-point conversions) applied directly to weekly datasets.
+- **Rest-of-season simulator** – Monte Carlo engine produces playoff odds, seed distributions, and matchup projections for every remaining week.
+- **Real-data frontend** – Next.js App Router dashboard renders the simulator grid and APIs straight from the generated artifacts (no mocks).
 
 ---
 
@@ -39,9 +39,9 @@
 
 | Layer | Responsibilities | Status |
 |-------|------------------|--------|
-| Backend (Python CLI) | Authenticated ESPN pulls, nflverse sync, normalization, scoring, artifact export | ✅ Active
-| Data Artifacts | CSV/JSON outputs under `data/out/` feeding downstream consumers | ✅ Active
-| Frontend (Next.js) | League narrative dashboard, matchup heat, community surfaces powered by real artifacts | 🛠️ In planning
+| Backend (Python CLI) | Authenticated ESPN pulls, nflverse sync, normalization, scoring, simulation export | ✅ Active
+| Data Artifacts | CSV/JSON outputs under `data/out/` and `data/out/simulations/` | ✅ Active
+| Frontend (Next.js) | Rest-of-season simulator grid and APIs backed by real artifacts | ✅ Active (first release)
 | Docs | UX architecture & data contracts, future contribution guides | ✅ `docs/`
 
 ---
@@ -54,6 +54,7 @@
 │   └── web/               # Next.js App Router frontend (initial scaffold)
 ├── config/                # Scoring configs and env templates
 ├── data/raw/              # Cached source pulls (gitignored)
+├── data/in/               # Intermediate baselines (gitignored)
 ├── data/out/              # Generated outputs (gitignored)
 ├── docs/                  # UX notes, data contracts, assets
 ├── src/fantasy_nfl/       # Python package source
@@ -103,9 +104,9 @@
    Outputs land under `data/out/espn/<season>/` (e.g., `roster_enriched.csv`, `weekly_scores_*.csv`).
 9. **Or run the all-in-one refresh**
    ```bash
-   poetry run fantasy refresh-week --week 1
+   poetry run fantasy refresh-all --season 2025 --week 1
    ```
-   Add `--force-nflverse` when you want fresh nflverse downloads, or `--skip-score` to stop before scoring.
+   Add `--start-week/--end-week` to cover a span, `--force-nflverse` for fresh downloads, or `--skip-score` to stop before scoring. A convenience `npm run refresh-all` script proxies the same command.
 
 ---
 
@@ -116,17 +117,17 @@
 - `data/out/espn/<season>/schedule.csv` – matchup matrix with results and opponent mapping.
 - `data/out/espn/<season>/weekly_stats_*.csv` – per-player stat lines joined to lineup slots.
 - `data/out/espn/<season>/weekly_scores_*.csv` – scoring-engine output with base/bonus breakdowns.
+- `data/out/simulations/<season>/rest_of_season.json` – rest-of-season simulator bundle (matchups, standings projections, Monte Carlo odds).
 - Planned extensions: highlights, insights, asset manifests (see `docs/frontend-ux-data-contract.md`).
-- Next API route `GET /api/league` now exposes the latest season's `teams.csv` as JSON (returns 503 until artifacts exist).
+- API routes: `GET /api/league` for team metadata and `GET /api/sim/rest-of-season` for the latest simulator dataset (returns 503 until artifacts exist).
 
 ---
 
-## Frontend Roadmap
+## Frontend Snapshot
 
-- Next.js App Router workspace lives at `apps/web/` (initial scaffold renders status cards, no mock data paths).
-- Implement API routes that read the real CSV/JSON artifacts and emit the contracts defined in `docs/frontend-ux-data-contract.md`.
-- Build the league home experience: narrative hero, live matchup strip, manager capsules, history rail.
-- Layer in highlights/insights once backend produces those feeds; integrate asset manifest for player photos and team logos.
+- Next.js App Router workspace lives at `apps/web/`.
+- The `/` page renders the rest-of-season simulator grid, driven by the backend JSON (`/api/sim/rest-of-season`).
+- Additional surfaces (matchup narratives, transaction timelines, projection overrides) will build on the same artifact contracts.
 
 ---
 
