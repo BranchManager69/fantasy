@@ -143,3 +143,161 @@ export async function getLatestSimulation(): Promise<RestOfSeasonSimulation | nu
   }
   return null;
 }
+
+export type SimulationLookup = {
+  teamsById: Map<number, SimulationTeamMeta>;
+  standingsByTeamId: Map<number, SimulationStanding>;
+  scheduleByTeamId: Map<number, SimulationTeamScheduleEntry[]>;
+  matchupsById: Map<string, SimulationMatchupWithWeek>;
+  monteCarloByTeamId: Map<number, MonteCarloTeamSummary>;
+};
+
+export type SimulationMatchupWithWeek = SimulationMatchup & { week: number };
+
+export type TeamScheduleWithContext = SimulationTeamScheduleEntry & {
+  opponent: SimulationTeamMeta | null;
+  opponentStanding: SimulationStanding | null;
+  opponentMonteCarlo: MonteCarloTeamSummary | null;
+  matchup: SimulationMatchupWithWeek | null;
+  teamProjection: SimulationTeamProjection | null;
+  opponentProjection: SimulationTeamProjection | null;
+};
+
+export type TeamContext = {
+  team: SimulationTeamMeta;
+  standing: SimulationStanding | null;
+  monteCarlo: MonteCarloTeamSummary | null;
+  schedule: TeamScheduleWithContext[];
+  nextMatchup: TeamScheduleWithContext | null;
+};
+
+export function buildSimulationLookup(simulation: RestOfSeasonSimulation): SimulationLookup {
+  const teamsById = new Map<number, SimulationTeamMeta>();
+  for (const team of simulation.teams) {
+    teamsById.set(team.team_id, team);
+  }
+
+  const standingsByTeamId = new Map<number, SimulationStanding>();
+  for (const standing of simulation.standings) {
+    standingsByTeamId.set(standing.team.team_id, standing);
+  }
+
+  const scheduleByTeamId = new Map<number, SimulationTeamScheduleEntry[]>();
+  for (const [teamIdRaw, entries] of Object.entries(simulation.team_schedule)) {
+    const teamId = Number(teamIdRaw);
+    if (!Number.isFinite(teamId)) {
+      continue;
+    }
+    const sorted = [...entries].sort((a, b) => a.week - b.week);
+    scheduleByTeamId.set(teamId, sorted);
+  }
+
+  const matchupsById = new Map<string, SimulationMatchupWithWeek>();
+  for (const week of simulation.weeks) {
+    for (const matchup of week.matchups) {
+      matchupsById.set(matchup.matchup_id, { ...matchup, week: week.week });
+    }
+  }
+
+  const monteCarloByTeamId = new Map<number, MonteCarloTeamSummary>();
+  if (simulation.monte_carlo) {
+    for (const entry of simulation.monte_carlo.teams) {
+      monteCarloByTeamId.set(entry.team.team_id, entry);
+    }
+  }
+
+  return {
+    teamsById,
+    standingsByTeamId,
+    scheduleByTeamId,
+    matchupsById,
+    monteCarloByTeamId,
+  };
+}
+
+export function getMatchupById(
+  simulation: RestOfSeasonSimulation,
+  matchupId: string,
+  lookup?: SimulationLookup,
+): SimulationMatchupWithWeek | null {
+  const context = lookup ?? buildSimulationLookup(simulation);
+  return context.matchupsById.get(matchupId) ?? null;
+}
+
+export function getTeamSchedule(
+  simulation: RestOfSeasonSimulation,
+  teamId: number,
+  lookup?: SimulationLookup,
+): TeamScheduleWithContext[] {
+  const context = lookup ?? buildSimulationLookup(simulation);
+  const schedule = context.scheduleByTeamId.get(teamId);
+  if (!schedule) {
+    return [];
+  }
+
+  return schedule.map((entry) => {
+    const matchup = context.matchupsById.get(entry.matchup_id) ?? null;
+    const opponent = context.teamsById.get(entry.opponent_team_id) ?? null;
+    const opponentStanding = context.standingsByTeamId.get(entry.opponent_team_id) ?? null;
+    const opponentMonteCarlo = context.monteCarloByTeamId.get(entry.opponent_team_id) ?? null;
+
+    let teamProjection: SimulationTeamProjection | null = null;
+    let opponentProjection: SimulationTeamProjection | null = null;
+
+    if (matchup) {
+      if (entry.is_home) {
+        teamProjection = matchup.home;
+        opponentProjection = matchup.away;
+      } else {
+        teamProjection = matchup.away;
+        opponentProjection = matchup.home;
+      }
+    }
+
+    return {
+      ...entry,
+      opponent,
+      opponentStanding: opponentStanding ?? null,
+      opponentMonteCarlo: opponentMonteCarlo ?? null,
+      matchup,
+      teamProjection,
+      opponentProjection,
+    };
+  });
+}
+
+export function getTeamContext(
+  simulation: RestOfSeasonSimulation,
+  teamId: number,
+  lookup?: SimulationLookup,
+): TeamContext | null {
+  const context = lookup ?? buildSimulationLookup(simulation);
+  const team = context.teamsById.get(teamId);
+  if (!team) {
+    return null;
+  }
+
+  const schedule = getTeamSchedule(simulation, teamId, context);
+  const standing = context.standingsByTeamId.get(teamId) ?? null;
+  const monteCarlo = context.monteCarloByTeamId.get(teamId) ?? null;
+
+  const nextMatchup = schedule.find((entry) => entry.week >= simulation.start_week) ?? schedule[0] ?? null;
+
+  return {
+    team,
+    standing,
+    monteCarlo,
+    schedule,
+    nextMatchup,
+  };
+}
+
+export function getTeamsSortedByStanding(
+  simulation: RestOfSeasonSimulation,
+  lookup?: SimulationLookup,
+): SimulationStanding[] {
+  const context = lookup ?? buildSimulationLookup(simulation);
+  return simulation.standings
+    .map((standing) => context.standingsByTeamId.get(standing.team.team_id) ?? standing)
+    .sort((a, b) => b.projected_record.wins - a.projected_record.wins);
+}

@@ -1,86 +1,27 @@
+import Link from "next/link";
+
+import {
+  formatMargin,
+  formatOwners,
+  formatRecord,
+  formatTimestamp,
+  probabilityClass,
+  probabilityLabel,
+} from "@/lib/formatters";
 import {
   type MonteCarloSummary,
   type MonteCarloTeamSummary,
   type RestOfSeasonSimulation,
   type SimulationStanding,
   type SimulationTeamMeta,
-  type SimulationTeamScheduleEntry,
+  type TeamScheduleWithContext,
+  buildSimulationLookup,
   getLatestSimulation,
+  getTeamSchedule,
 } from "@/lib/simulator-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function formatOwners(owners: string[]): string {
-  if (owners.length === 0) return "Unclaimed";
-  if (owners.length === 1) return owners[0];
-  if (owners.length === 2) return `${owners[0]} & ${owners[1]}`;
-  return `${owners[0]}, ${owners[1]} +`;
-}
-
-function formatTimestamp(timestamp: string): string {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
-  return date.toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
-function formatRecord(record: SimulationStanding["projected_record"]): string {
-  return `${record.wins.toFixed(1)} – ${record.losses.toFixed(1)}`;
-}
-
-function probabilityClass(probability: number): string {
-  if (probability >= 0.6) return "cell cell--favorable";
-  if (probability <= 0.4) return "cell cell--underdog";
-  return "cell cell--coinflip";
-}
-
-function probabilityLabel(probability: number): string {
-  const pct = Math.round(probability * 100);
-  return `${pct}% win odds`;
-}
-
-function formatMargin(margin: number): string {
-  if (Number.isNaN(margin)) return "";
-  if (Math.abs(margin) < 0.25) return "coin flip";
-  if (margin > 0) return `favored by ${margin.toFixed(1)}`;
-  return `needs ${Math.abs(margin).toFixed(1)}`;
-}
-
-function buildScheduleIndex(
-  teamSchedule: RestOfSeasonSimulation["team_schedule"],
-): Map<number, Map<number, SimulationTeamScheduleEntry>> {
-  const index = new Map<number, Map<number, SimulationTeamScheduleEntry>>();
-  for (const [teamIdRaw, entries] of Object.entries(teamSchedule)) {
-    const teamId = Number(teamIdRaw);
-    if (!Number.isFinite(teamId)) continue;
-    const weekMap = new Map<number, SimulationTeamScheduleEntry>();
-    for (const entry of entries) {
-      weekMap.set(entry.week, entry);
-    }
-    index.set(teamId, weekMap);
-  }
-  return index;
-}
-
-function buildMonteCarloIndex(
-  monteCarlo?: MonteCarloSummary,
-): Map<number, MonteCarloTeamSummary> | null {
-  if (!monteCarlo) {
-    return null;
-  }
-  const map = new Map<number, MonteCarloTeamSummary>();
-  for (const entry of monteCarlo.teams) {
-    map.set(entry.team.team_id, entry);
-  }
-  return map;
-}
 
 function WeekHeader({ weeks }: { weeks: number[] }) {
   return (
@@ -101,19 +42,19 @@ function TeamRow({
   team,
   record,
   weeks,
-  scheduleIndex,
-  teamsById,
+  schedule,
   monteCarlo,
 }: {
   team: SimulationTeamMeta;
   record: SimulationStanding["projected_record"];
   weeks: number[];
-  scheduleIndex: Map<number, Map<number, SimulationTeamScheduleEntry>>;
-  teamsById: Map<number, SimulationTeamMeta>;
-  monteCarlo?: Map<number, MonteCarloTeamSummary> | null;
+  schedule: TeamScheduleWithContext[];
+  monteCarlo?: MonteCarloTeamSummary | null;
 }) {
-  const weeklyMap = scheduleIndex.get(team.team_id) ?? new Map();
-  const mc = monteCarlo?.get(team.team_id ?? -1) ?? null;
+  const weeklyMap = new Map<number, TeamScheduleWithContext>(
+    schedule.map((entry) => [entry.week, entry] as const),
+  );
+  const mc = monteCarlo ?? null;
   const playoffCopy = mc ? `${Math.round(mc.playoff_odds * 100)}% playoff odds` : null;
   const seedCopy = mc && mc.top_seed_odds > 0.01 ? `${Math.round(mc.top_seed_odds * 100)}% for #1 seed` : null;
   const avgWinsCopy = mc ? `${mc.average_wins.toFixed(1)} avg wins` : null;
@@ -121,7 +62,9 @@ function TeamRow({
     <tr>
       <th scope="row">
         <div className="team-heading">
-          <span className="team-heading__name">{team.name}</span>
+          <Link href={`/teams/${team.team_id}`} className="team-heading__name">
+            {team.name}
+          </Link>
           <div className="team-heading__meta">
             <span className="team-heading__record">{formatRecord(record)}</span>
             {avgWinsCopy ? <span className="team-heading__avg">{avgWinsCopy}</span> : null}
@@ -140,8 +83,9 @@ function TeamRow({
             </td>
           );
         }
-        const opponent = teamsById.get(entry.opponent_team_id);
+        const opponent = entry.opponent;
         const opponentLabel = opponent ? opponent.abbrev || opponent.name : `Team ${entry.opponent_team_id}`;
+        const opponentHref = opponent ? `/teams/${opponent.team_id}` : null;
         const direction = entry.is_home ? "vs" : "@";
         const cellClass = probabilityClass(entry.win_probability);
         const winPct = Math.round(entry.win_probability * 100);
@@ -152,7 +96,9 @@ function TeamRow({
               <div className="cell__points">{entry.projected_points.toFixed(1)} pts</div>
               <div className="cell__opponent-row">
                 <span className="cell__opponent-dir">{direction}</span>
-                <span className="cell__opponent-name">{opponentLabel}</span>
+                <span className="cell__opponent-name">
+                  {opponentHref ? <Link href={opponentHref}>{opponentLabel}</Link> : opponentLabel}
+                </span>
                 <span className="cell__opponent-opp">{entry.opponent_projected_points.toFixed(1)} pts</span>
               </div>
               <div className="cell__margin">{marginCopy}</div>
@@ -187,13 +133,11 @@ export default async function Home() {
     );
   }
 
+  const lookup = buildSimulationLookup(simulation);
   const standings = simulation.standings;
   const orderedTeams = standings.map((entry) => entry.team);
   const weeks = [...new Set(simulation.weeks.map((week) => week.week))].sort((a, b) => a - b);
-  const teamsById = new Map(simulation.teams.map((team) => [team.team_id, team] as const));
-  const scheduleIndex = buildScheduleIndex(simulation.team_schedule);
   const monteCarlo = simulation.monte_carlo;
-  const monteCarloIndex = buildMonteCarloIndex(monteCarlo);
 
   return (
     <main className="shell">
@@ -221,9 +165,10 @@ export default async function Home() {
                   team={team}
                   record={standings[index].projected_record}
                   weeks={weeks}
-                  scheduleIndex={scheduleIndex}
-                  teamsById={teamsById}
-                  monteCarlo={monteCarloIndex}
+                  schedule={getTeamSchedule(simulation, team.team_id, lookup)}
+                  monteCarlo={
+                    monteCarlo ? lookup.monteCarloByTeamId.get(team.team_id) ?? null : null
+                  }
                 />
               ))}
             </tbody>
