@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import {
+  formatFinalMargin,
   formatMargin,
   formatOwners,
   formatRecord,
@@ -57,6 +58,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
   const topSeedOdds = formatPercent(monteCarlo?.top_seed_odds ?? null);
   const bestSeedCopy = formatSeed(monteCarlo?.best_seed ?? null);
   const nextMatchupTone = nextMatchup ? probabilityTone(nextMatchup.win_probability) : null;
+  const remainingGames = schedule.filter((entry) => !entry.isActual).length;
 
   return (
     <main className="shell">
@@ -188,17 +190,35 @@ export default async function TeamPage({ params }: TeamPageProps) {
         <section className="team-schedule">
           <header>
             <h2>Rest-of-Season Schedule</h2>
-            <span>{schedule.length} games remaining</span>
+            <span>{remainingGames} games remaining</span>
           </header>
           <div className="team-schedule__grid">
             {schedule.map((entry) => {
               const opponent = entry.opponent;
               const opponentLabel = opponent ? opponent.name : `Team ${entry.opponent_team_id}`;
               const href = opponent ? `/teams/${opponent.team_id}` : null;
+              const tone = entry.isActual
+                ? entry.result === "win"
+                  ? "favorable"
+                  : entry.result === "loss"
+                    ? "underdog"
+                    : "coinflip"
+                : probabilityTone(entry.win_probability);
+              const scoreLine = `${(entry.actualPoints ?? entry.projected_points).toFixed(1)} – ${(entry.opponentActualPoints ?? entry.opponent_projected_points).toFixed(1)}`;
+              const probabilityText = entry.isActual
+                ? entry.result === "win"
+                  ? `Won (${scoreLine})`
+                  : entry.result === "loss"
+                    ? `Lost (${scoreLine})`
+                    : `Tied (${scoreLine})`
+                : probabilityLabel(entry.win_probability);
+              const marginCopy = entry.isActual
+                ? formatFinalMargin(entry.projected_margin)
+                : formatMargin(entry.projected_margin);
               return (
                 <article
                   key={`${entry.week}-${entry.matchup_id}`}
-                  className={`team-schedule__card probability-glow--${probabilityTone(entry.win_probability)}`}
+                  className={`team-schedule__card probability-glow--${tone}`}
                 >
                   <header>
                     <span className="team-schedule__week">Week {entry.week}</span>
@@ -209,10 +229,10 @@ export default async function TeamPage({ params }: TeamPageProps) {
                     {href ? <Link href={href}>{opponentLabel}</Link> : opponentLabel}
                   </h3>
                   <p className="team-schedule__projection">
-                    {entry.projected_points.toFixed(1)} – {entry.opponent_projected_points.toFixed(1)}
+                    {entry.isActual ? `Final ${scoreLine}` : `${entry.projected_points.toFixed(1)} – ${entry.opponent_projected_points.toFixed(1)}`}
                   </p>
-                  <p className="team-schedule__prob">{probabilityLabel(entry.win_probability)}</p>
-                  <p className="team-schedule__margin">{formatMargin(entry.projected_margin)}</p>
+                  <p className="team-schedule__prob">{probabilityText}</p>
+                  <p className="team-schedule__margin">{marginCopy}</p>
                 </article>
               );
             })}

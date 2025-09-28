@@ -38,9 +38,21 @@ export type SimulationMatchup = {
   away_win_probability: number;
 };
 
+export type SimulationWeekMatchup = SimulationMatchup & {
+  is_actual?: boolean;
+  result?: {
+    home: "win" | "loss" | "tie";
+    away: "win" | "loss" | "tie";
+  };
+  final_score?: {
+    home: number;
+    away: number;
+  };
+};
+
 export type SimulationWeek = {
   week: number;
-  matchups: SimulationMatchup[];
+  matchups: SimulationWeekMatchup[];
 };
 
 export type SimulationTeamScheduleEntry = {
@@ -52,6 +64,10 @@ export type SimulationTeamScheduleEntry = {
   opponent_projected_points: number;
   win_probability: number;
   projected_margin: number;
+  is_actual?: boolean;
+  result?: "win" | "loss" | "tie";
+  actual_points?: number;
+  opponent_actual_points?: number;
 };
 
 export type SimulationStanding = {
@@ -99,7 +115,9 @@ export type RestOfSeasonSimulation = {
   standings: SimulationStanding[];
   sources: {
     projections_weeks: number[];
+    completed_weeks?: number[];
   };
+  completed_weeks?: number[];
   monte_carlo?: MonteCarloSummary;
 };
 
@@ -152,15 +170,22 @@ export type SimulationLookup = {
   monteCarloByTeamId: Map<number, MonteCarloTeamSummary>;
 };
 
-export type SimulationMatchupWithWeek = SimulationMatchup & { week: number };
+export type SimulationMatchupWithWeek = SimulationWeekMatchup & { week: number };
 
-export type TeamScheduleWithContext = SimulationTeamScheduleEntry & {
+export type TeamScheduleWithContext = Omit<
+  SimulationTeamScheduleEntry,
+  "is_actual" | "actual_points" | "opponent_actual_points" | "result"
+> & {
   opponent: SimulationTeamMeta | null;
   opponentStanding: SimulationStanding | null;
   opponentMonteCarlo: MonteCarloTeamSummary | null;
   matchup: SimulationMatchupWithWeek | null;
   teamProjection: SimulationTeamProjection | null;
   opponentProjection: SimulationTeamProjection | null;
+  isActual: boolean;
+  result: "win" | "loss" | "tie" | null;
+  actualPoints: number | null;
+  opponentActualPoints: number | null;
 };
 
 export type TeamContext = {
@@ -236,6 +261,20 @@ export function getTeamSchedule(
   }
 
   return schedule.map((entry) => {
+    const {
+      is_actual,
+      result: rawResult,
+      actual_points,
+      opponent_actual_points,
+      ...rest
+    } = entry;
+    const isActual = Boolean(is_actual);
+    const result = (rawResult as "win" | "loss" | "tie" | undefined) ?? null;
+    const actualPoints = isActual ? actual_points ?? entry.projected_points : null;
+    const opponentActualPoints = isActual
+      ? opponent_actual_points ?? entry.opponent_projected_points
+      : null;
+
     const matchup = context.matchupsById.get(entry.matchup_id) ?? null;
     const opponent = context.teamsById.get(entry.opponent_team_id) ?? null;
     const opponentStanding = context.standingsByTeamId.get(entry.opponent_team_id) ?? null;
@@ -255,13 +294,17 @@ export function getTeamSchedule(
     }
 
     return {
-      ...entry,
+      ...rest,
       opponent,
       opponentStanding: opponentStanding ?? null,
       opponentMonteCarlo: opponentMonteCarlo ?? null,
       matchup,
       teamProjection,
       opponentProjection,
+      isActual,
+      result,
+      actualPoints,
+      opponentActualPoints,
     };
   });
 }

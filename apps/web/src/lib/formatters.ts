@@ -43,3 +43,10 @@ export function formatMargin(margin: number): string {
   if (margin > 0) return `favored by ${margin.toFixed(1)}`;
   return `needs ${Math.abs(margin).toFixed(1)}`;
 }
+
+export function formatFinalMargin(margin: number): string {
+  if (Number.isNaN(margin)) return "";
+  if (Math.abs(margin) < 0.25) return "Tied";
+  if (margin > 0) return `Won by ${margin.toFixed(1)}`;
+  return `Lost by ${Math.abs(margin).toFixed(1)}`;
+}

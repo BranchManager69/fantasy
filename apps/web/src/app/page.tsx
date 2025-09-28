@@ -1,13 +1,14 @@
 import Link from "next/link";
 
 import {
+  formatFinalMargin,
   formatMargin,
   formatOwners,
   formatRecord,
-  formatTimestamp,
   probabilityClass,
   probabilityLabel,
 } from "@/lib/formatters";
+import { RefreshControls } from "@/components/refresh-controls";
 import {
   type MonteCarloSummary,
   type MonteCarloTeamSummary,
@@ -87,27 +88,45 @@ function TeamRow({
         const opponentLabel = opponent ? opponent.abbrev || opponent.name : `Team ${entry.opponent_team_id}`;
         const opponentHref = opponent ? `/teams/${opponent.team_id}` : null;
         const direction = entry.is_home ? "vs" : "@";
-        const cellClass = probabilityClass(entry.win_probability);
+        const isActual = entry.isActual;
+        const cellClass = isActual
+          ? `cell cell--actual cell--actual-${entry.result ?? "tie"}`
+          : probabilityClass(entry.win_probability);
+        const pointsValue = (isActual ? entry.actualPoints ?? entry.projected_points : entry.projected_points).toFixed(1);
+        const opponentPointsValue = (
+          isActual
+            ? entry.opponentActualPoints ?? entry.opponent_projected_points
+            : entry.opponent_projected_points
+        ).toFixed(1);
+        const marginCopy = isActual ? formatFinalMargin(entry.projected_margin) : formatMargin(entry.projected_margin);
         const winPct = Math.round(entry.win_probability * 100);
-        const marginCopy = formatMargin(entry.projected_margin);
+        const resultLabel = entry.result === "win" ? "Won" : entry.result === "loss" ? "Lost" : entry.result === "tie" ? "Tied" : "Final";
         return (
-          <td key={week} className={`cell ${cellClass}`}>
+          <td key={week} className={cellClass}>
             <div className="cell__body">
-              <div className="cell__points">{entry.projected_points.toFixed(1)} pts</div>
+              <div className="cell__points">{pointsValue} pts</div>
               <div className="cell__opponent-row">
                 <span className="cell__opponent-dir">{direction}</span>
                 <span className="cell__opponent-name">
                   {opponentHref ? <Link href={opponentHref}>{opponentLabel}</Link> : opponentLabel}
                 </span>
-                <span className="cell__opponent-opp">{entry.opponent_projected_points.toFixed(1)} pts</span>
+                <span className="cell__opponent-opp">{opponentPointsValue} pts</span>
               </div>
               <div className="cell__margin">{marginCopy}</div>
-              <div className="cell__prob">
-                <span className="cell__prob-value">{probabilityLabel(entry.win_probability)}</span>
-                <div className="cell__prob-bar">
-                  <span style={{ width: `${winPct}%` }} />
+              {isActual ? (
+                <div className="cell__prob cell__prob--final">
+                  <span className="cell__prob-value">
+                    {resultLabel} • {pointsValue} – {opponentPointsValue}
+                  </span>
                 </div>
-              </div>
+              ) : (
+                <div className="cell__prob">
+                  <span className="cell__prob-value">{probabilityLabel(entry.win_probability)}</span>
+                  <div className="cell__prob-bar">
+                    <span style={{ width: `${winPct}%` }} />
+                  </div>
+                </div>
+              )}
             </div>
           </td>
         );
@@ -137,6 +156,8 @@ export default async function Home() {
   const standings = simulation.standings;
   const orderedTeams = standings.map((entry) => entry.team);
   const weeks = [...new Set(simulation.weeks.map((week) => week.week))].sort((a, b) => a - b);
+  const firstWeek = weeks[0];
+  const lastWeek = weeks[weeks.length - 1];
   const monteCarlo = simulation.monte_carlo;
 
   return (
@@ -144,8 +165,8 @@ export default async function Home() {
       <section className="panel matrix-panel">
         <header className="matrix-header">
           <div className="matrix-header__left">
-            <h1>Season {simulation.season} · Weeks {simulation.start_week}–{simulation.end_week}</h1>
-            <span>Generated {formatTimestamp(simulation.generated_at)} · {simulation.weeks.length} weeks · {simulation.teams.length} teams</span>
+            <h1>Season {simulation.season} · Weeks {firstWeek}–{lastWeek}</h1>
+            <span>{simulation.weeks.length} weeks · {simulation.teams.length} teams</span>
           </div>
           {monteCarlo ? (
             <div className="matrix-header__stats">
@@ -154,6 +175,7 @@ export default async function Home() {
               {monteCarlo.random_seed !== null ? <span>Seed {monteCarlo.random_seed}</span> : null}
             </div>
           ) : null}
+          <RefreshControls initialGeneratedAt={simulation.generated_at} />
         </header>
         <div className="matrix-wrapper">
           <table className="sim-matrix">

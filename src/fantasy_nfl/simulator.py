@@ -65,6 +65,140 @@ class RestOfSeasonSimulator:
         self.settings = settings
 
     # ---------------------------
+    # Data loading helpers
+    # ---------------------------
+
+    def _load_week_scores(self, season: int, week: int) -> pd.DataFrame:
+        scores_path = (
+            self.settings.data_root
+            / "out"
+            / "espn"
+            / str(season)
+            / f"weekly_scores_{season}_week_{week}.csv"
+        )
+        if not scores_path.exists():
+            return pd.DataFrame()
+
+        df = pd.read_csv(scores_path)
+        if "counts_for_score" in df.columns:
+            df["counts_for_score"] = (
+                df["counts_for_score"].astype(str).str.lower().isin(["true", "1", "yes"])
+            )
+        else:
+            df["counts_for_score"] = True
+        df["team_id"] = pd.to_numeric(df.get("team_id"), errors="coerce").astype("Int64")
+        df["score_total"] = pd.to_numeric(df.get("score_total"), errors="coerce").fillna(0.0)
+        return df
+
+    def _summarize_team_points(
+        self,
+        teams: dict[int, TeamMeta],
+        table: pd.DataFrame,
+        points_column: str,
+    ) -> dict[int, TeamProjection]:
+        team_projections: dict[int, TeamProjection] = {}
+
+        normalized = table.copy()
+        normalized[points_column] = pd.to_numeric(
+            normalized.get(points_column), errors="coerce"
+        ).fillna(0.0)
+
+        if "counts_for_score" in normalized.columns:
+            normalized["counts_for_score"] = normalized["counts_for_score"].astype(bool)
+        else:
+            normalized["counts_for_score"] = False
+
+        for team_id in normalized["team_id"].dropna().unique():
+            team_id_int = int(team_id)
+            if team_id_int not in teams:
+                continue
+
+            team_rows = normalized.loc[normalized["team_id"] == team_id]
+            starters: list[dict[str, object]] = []
+            bench: list[dict[str, object]] = []
+            total_points = 0.0
+
+            for _, row in team_rows.iterrows():
+                points = float(row.get(points_column, 0.0))
+                entry = {
+                    "espn_player_id": int(row.get("espn_player_id")) if pd.notna(row.get("espn_player_id")) else None,
+                    "player_name": str(row.get("player_name", "")),
+                    "lineup_slot": str(row.get("lineup_slot", "")),
+                    "espn_position": str(row.get("espn_position", "")),
+                    "projected_points": round(points, 2),
+                    "counts_for_score": bool(row.get("counts_for_score", False)),
+                }
+                if entry["counts_for_score"]:
+                    starters.append(entry)
+                    total_points += points
+                else:
+                    bench.append(entry)
+
+            starters.sort(key=lambda item: item["projected_points"], reverse=True)
+            bench.sort(key=lambda item: item["projected_points"], reverse=True)
+
+            team_projections[team_id_int] = TeamProjection(
+                team=teams[team_id_int],
+                projected_points=round(total_points, 2),
+                starters=starters,
+                bench=bench,
+            )
+
+        return team_projections
+
+    def _summarize_team_projections(
+        self,
+        teams: dict[int, TeamMeta],
+        projections: pd.DataFrame,
+    ) -> dict[int, TeamProjection]:
+        return self._summarize_team_points(teams, projections, "projected_points")
+
+    def _summarize_team_actuals(
+        self,
+        teams: dict[int, TeamMeta],
+        scores: pd.DataFrame,
+    ) -> dict[int, TeamProjection]:
+        return self._summarize_team_points(teams, scores, "score_total")
+
+    def _load_matchup_results(self, season: int) -> dict[tuple[int, str], dict[str, object]]:
+        raw_path = (
+            self.settings.data_root
+            / "raw"
+            / "espn"
+            / str(season)
+            / "view-mMatchup.json"
+        )
+        if not raw_path.exists():
+            return {}
+
+        try:
+            data = json.loads(raw_path.read_text())
+        except json.JSONDecodeError:
+            return {}
+
+        results: dict[tuple[int, str], dict[str, object]] = {}
+        for matchup in data.get("schedule", []):
+            week = matchup.get("matchupPeriodId")
+            matchup_id = matchup.get("id")
+            home = matchup.get("home", {})
+            away = matchup.get("away", {})
+            home_team_id = home.get("teamId")
+            away_team_id = away.get("teamId")
+            if week is None or matchup_id is None or home_team_id is None or away_team_id is None:
+                continue
+
+            key = (int(week), str(matchup_id))
+            results[key] = {
+                "home_team_id": int(home_team_id),
+                "away_team_id": int(away_team_id),
+                "home_points": float(home.get("totalPoints") or 0.0),
+                "away_points": float(away.get("totalPoints") or 0.0),
+                "winner": matchup.get("winner"),
+            }
+
+        return results
+
+    # ---------------------------
     # Public API
     # ---------------------------
     def build_dataset(
@@ -109,9 +243,139 @@ class RestOfSeasonSimulator:
                 f"No projection files fall within weeks {effective_start}-{effective_end}."
             )
 
-        matchup_rows = []
+        matchup_rows: list[MatchupProjection] = []
+        actual_matchups_by_week: dict[int, list[dict[str, object]]] = defaultdict(list)
+        future_matchups_by_week: dict[int, list[MatchupProjection]] = defaultdict(list)
         team_schedule: dict[int, list[dict[str, object]]] = {team_id: [] for team_id in teams}
-        standings_tracker = {team_id: {"wins": 0.0, "losses": 0.0, "ties": 0.0, "points": 0.0} for team_id in teams}
+        standings_tracker = {
+            team_id: {"wins": 0.0, "losses": 0.0, "ties": 0.0, "points": 0.0}
+            for team_id in teams
+        }
+
+        history_weeks = [wk for wk in completed_weeks if wk < effective_start]
+        matchup_results = self._load_matchup_results(season)
+
+        for week in history_weeks:
+            scores_df = self._load_week_scores(season, week)
+            if scores_df.empty:
+                continue
+
+            team_actuals = self._summarize_team_actuals(teams, scores_df)
+            week_schedule = schedule.loc[schedule["week"] == week]
+
+            for _, matchup in week_schedule.iterrows():
+                home_team_id = int(matchup["home_team_id"])
+                away_team_id = int(matchup["away_team_id"])
+                matchup_id = str(matchup["matchup_id"])
+
+                actual = matchup_results.get((week, matchup_id))
+                home_proj = team_actuals.get(home_team_id)
+                away_proj = team_actuals.get(away_team_id)
+
+                if actual is None or home_proj is None or away_proj is None:
+                    continue
+
+                home_points = float(actual.get("home_points", home_proj.projected_points))
+                away_points = float(actual.get("away_points", away_proj.projected_points))
+                winner = actual.get("winner")
+                margin = home_points - away_points
+
+                if winner == "HOME":
+                    home_prob_final, away_prob_final = 1.0, 0.0
+                    home_result, away_result = "win", "loss"
+                elif winner == "AWAY":
+                    home_prob_final, away_prob_final = 0.0, 1.0
+                    home_result, away_result = "loss", "win"
+                elif winner == "TIE":
+                    home_prob_final = away_prob_final = 0.5
+                    home_result = away_result = "tie"
+                elif margin > 1e-6:
+                    home_prob_final, away_prob_final = 1.0, 0.0
+                    home_result, away_result = "win", "loss"
+                elif margin < -1e-6:
+                    home_prob_final, away_prob_final = 0.0, 1.0
+                    home_result, away_result = "loss", "win"
+                else:
+                    home_prob_final = away_prob_final = 0.5
+                    home_result = away_result = "tie"
+
+                home_proj.projected_points = round(home_points, 2)
+                away_proj.projected_points = round(away_points, 2)
+
+                standings_tracker[home_team_id]["points"] += home_points
+                standings_tracker[away_team_id]["points"] += away_points
+
+                if home_result == "win":
+                    standings_tracker[home_team_id]["wins"] += 1
+                    standings_tracker[away_team_id]["losses"] += 1
+                elif home_result == "loss":
+                    standings_tracker[home_team_id]["losses"] += 1
+                    standings_tracker[away_team_id]["wins"] += 1
+                else:
+                    standings_tracker[home_team_id]["ties"] += 1
+                    standings_tracker[away_team_id]["ties"] += 1
+
+                team_schedule[home_team_id].append(
+                    {
+                        "week": week,
+                        "matchup_id": matchup_id,
+                        "opponent_team_id": away_team_id,
+                        "is_home": True,
+                        "projected_points": home_points,
+                        "opponent_projected_points": away_points,
+                        "win_probability": home_prob_final,
+                        "projected_margin": margin,
+                        "is_actual": True,
+                        "result": home_result,
+                        "actual_points": home_points,
+                        "opponent_actual_points": away_points,
+                    }
+                )
+                team_schedule[away_team_id].append(
+                    {
+                        "week": week,
+                        "matchup_id": matchup_id,
+                        "opponent_team_id": home_team_id,
+                        "is_home": False,
+                        "projected_points": away_points,
+                        "opponent_projected_points": home_points,
+                        "win_probability": away_prob_final,
+                        "projected_margin": -margin,
+                        "is_actual": True,
+                        "result": away_result,
+                        "actual_points": away_points,
+                        "opponent_actual_points": home_points,
+                    }
+                )
+
+                matchup_proj = MatchupProjection(
+                    week=week,
+                    matchup_id=matchup_id,
+                    home=home_proj,
+                    away=away_proj,
+                    home_win_probability=home_prob_final,
+                    away_win_probability=away_prob_final,
+                )
+                matchup_dict = self._matchup_to_dict(matchup_proj)
+                matchup_dict["is_actual"] = True
+                matchup_dict["result"] = {
+                    "home": home_result,
+                    "away": away_result,
+                }
+                matchup_dict["final_score"] = {
+                    "home": round(home_points, 2),
+                    "away": round(away_points, 2),
+                }
+                actual_matchups_by_week[week].append(matchup_dict)
+
+        base_records = {
+            team_id: {
+                "wins": standings_tracker[team_id]["wins"],
+                "losses": standings_tracker[team_id]["losses"],
+                "points": standings_tracker[team_id]["points"],
+            }
+            for team_id in teams
+        }
 
         for week in weeks_to_process:
             projections = self._load_week_projection(season, week)
@@ -130,7 +394,6 @@ class RestOfSeasonSimulator:
                 away_proj = team_projections.get(away_team_id)
 
                 if home_proj is None or away_proj is None:
-                    # Skip matchups lacking projections for either side.
                     continue
 
                 home_prob, away_prob = self._estimate_win_probabilities(
@@ -146,8 +409,8 @@ class RestOfSeasonSimulator:
                     away_win_probability=away_prob,
                 )
                 matchup_rows.append(matchup_proj)
+                future_matchups_by_week[week].append(matchup_proj)
 
-                # Update standings expectations
                 standings_tracker[home_team_id]["wins"] += home_prob
                 standings_tracker[home_team_id]["losses"] += away_prob
                 standings_tracker[home_team_id]["points"] += home_proj.projected_points
@@ -172,6 +435,7 @@ class RestOfSeasonSimulator:
                         "opponent_projected_points": away_proj.projected_points,
                         "win_probability": home_prob,
                         "projected_margin": delta,
+                        "is_actual": False,
                     }
                 )
                 team_schedule[away_team_id].append(
@@ -184,10 +448,19 @@ class RestOfSeasonSimulator:
                         "opponent_projected_points": home_proj.projected_points,
                         "win_probability": away_prob,
                         "projected_margin": -delta,
+                        "is_actual": False,
                     }
                 )
 
         matchup_rows.sort(key=lambda item: (item.week, item.matchup_id))
+
+        for schedule_entries in team_schedule.values():
+            schedule_entries.sort(key=lambda item: item["week"])
+
+        future_games_per_team = {
+            team_id: sum(1 for entry in entries if not entry.get("is_actual", False))
+            for team_id, entries in team_schedule.items()
+        }
 
         standings = []
         for team_id, record in standings_tracker.items():
@@ -203,21 +476,35 @@ class RestOfSeasonSimulator:
                     },
                     "projected_points": round(record["points"], 2),
                     "average_projected_points": round(avg_points, 2),
-                    "games_remaining": len(team_schedule[team_id]),
+                    "games_remaining": future_games_per_team.get(team_id, 0),
                 }
             )
 
         standings.sort(key=lambda entry: (-entry["projected_record"]["wins"], -entry["projected_points"]))
 
         weeks_payload: list[dict[str, object]] = []
-        for week in weeks_to_process:
-            week_matchups = [m for m in matchup_rows if m.week == week]
-            weeks_payload.append(
-                {
-                    "week": week,
-                    "matchups": [self._matchup_to_dict(item) for item in week_matchups],
-                }
-            )
+        all_weeks = sorted(set(history_weeks) | set(weeks_to_process))
+        for week in all_weeks:
+            if week in actual_matchups_by_week:
+                weeks_payload.append(
+                    {
+                        "week": week,
+                        "matchups": actual_matchups_by_week[week],
+                    }
+                )
+            else:
+                future_dicts = []
+                for matchup in future_matchups_by_week.get(week, []):
+                    matchup_dict = self._matchup_to_dict(matchup)
+                    matchup_dict["is_actual"] = False
+                    future_dicts.append(matchup_dict)
+                if future_dicts:
+                    weeks_payload.append(
+                        {
+                            "week": week,
+                            "matchups": future_dicts,
+                        }
+                    )
 
         dataset: dict[str, object] = {
             "season": season,
@@ -231,7 +518,9 @@ class RestOfSeasonSimulator:
             "standings": standings,
             "sources": {
                 "projections_weeks": weeks_to_process,
+                "completed_weeks": history_weeks,
             },
+            "completed_weeks": history_weeks,
         }
 
         if sim_iterations > 0:
@@ -242,6 +531,8 @@ class RestOfSeasonSimulator:
                 iterations=sim_iterations,
                 playoff_slots=playoff_slots,
                 random_seed=random_seed,
+                base_records=base_records,
+                future_games=future_games_per_team,
             )
             dataset["monte_carlo"] = monte_carlo
 
@@ -456,6 +747,8 @@ class RestOfSeasonSimulator:
         iterations: int,
         playoff_slots: int,
         random_seed: Optional[int],
+        base_records: dict[int, dict[str, float]],
+        future_games: dict[int, int],
     ) -> dict[str, object]:
         if iterations <= 0:
             raise ValueError("iterations must be positive when running Monte Carlo")
@@ -465,7 +758,6 @@ class RestOfSeasonSimulator:
         rng = random.Random(random_seed)
 
         team_ids = list(teams.keys())
-        games_per_team = {team_id: len(entries) for team_id, entries in team_schedule.items()}
 
         aggregates: dict[int, dict[str, object]] = {
             team_id: {
@@ -486,9 +778,18 @@ class RestOfSeasonSimulator:
             matchup_groups[matchup.week].append(matchup)
 
         for _ in range(iterations):
-            wins = {team_id: 0 for team_id in team_ids}
-            losses = {team_id: 0 for team_id in team_ids}
-            points = {team_id: 0.0 for team_id in team_ids}
+            wins = {
+                team_id: float(base_records.get(team_id, {}).get("wins", 0.0))
+                for team_id in team_ids
+            }
+            losses = {
+                team_id: float(base_records.get(team_id, {}).get("losses", 0.0))
+                for team_id in team_ids
+            }
+            points = {
+                team_id: float(base_records.get(team_id, {}).get("points", 0.0))
+                for team_id in team_ids
+            }
 
             for week in sorted(matchup_groups.keys()):
                 for matchup in matchup_groups[week]:
@@ -556,7 +857,7 @@ class RestOfSeasonSimulator:
                     "average_wins": round(wins_avg, 3),
                     "average_losses": round(losses_avg, 3),
                     "average_points": round(points_avg, 2),
-                    "games_remaining": games_per_team.get(team_id, 0),
+                    "games_remaining": future_games.get(team_id, 0),
                     "playoff_odds": data["playoff_count"] / iterations_float,
                     "top_seed_odds": data["top_seed_count"] / iterations_float,
                     "seed_distribution": seed_distribution,
