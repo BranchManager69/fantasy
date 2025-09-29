@@ -13,6 +13,7 @@ import { ScenarioDrawer } from "@/components/scenario-drawer";
 import { ScenarioSwitcher } from "@/components/scenario-switcher";
 import { LiveActivityFeed } from "@/components/live-activity-feed";
 import { OwnerAvatars } from "@/components/owner-avatars";
+import { WeekCell } from "@/components/week-cell";
 import {
   type MonteCarloSummary,
   type MonteCarloTeamSummary,
@@ -98,79 +99,7 @@ function TeamRow({
       </th>
       {weeks.map((week) => {
         const entry = weeklyMap.get(week);
-        if (!entry) {
-          return (
-            <td key={week} className="cell cell--empty">
-              —
-            </td>
-          );
-        }
-        const opponent = entry.opponent;
-        const opponentLabel = opponent ? opponent.abbrev || opponent.name : `Team ${entry.opponent_team_id}`;
-        const opponentHref = opponent ? `/teams/${opponent.team_id}` : null;
-        const direction = entry.is_home ? "vs" : "@";
-        const isActual = entry.isActual;
-        const status = entry.status ?? (isActual ? (entry.result ? "final" : "in_progress") : "upcoming");
-        const isLive = isActual && status === "in_progress";
-        const isFinal = isActual && status === "final";
-        const cellClass = isActual
-          ? `cell cell--actual ${isLive ? "cell--actual-live" : `cell--actual-${entry.result ?? "tie"}`}`
-          : probabilityClass(entry.win_probability);
-        const pointsFor = isActual ? entry.actualPoints ?? entry.projected_points : entry.projected_points;
-        const pointsAgainst = isActual
-          ? entry.opponentActualPoints ?? entry.opponent_projected_points
-          : entry.opponent_projected_points;
-        const pointsValue = pointsFor.toFixed(1);
-        const opponentPointsValue = pointsAgainst.toFixed(1);
-        const actualMargin =
-          entry.actualPoints !== null && entry.opponentActualPoints !== null
-            ? entry.actualPoints - entry.opponentActualPoints
-            : entry.projected_margin;
-        const marginCopy = isActual
-          ? isLive
-            ? formatLiveMargin(entry.actualPoints, entry.opponentActualPoints)
-            : formatFinalMargin(actualMargin)
-          : formatMargin(entry.projected_margin);
-        const winPct = Math.round(entry.win_probability * 100);
-        const resultLabel = isLive
-          ? "Live"
-          : entry.result === "win"
-            ? "Won"
-            : entry.result === "loss"
-              ? "Lost"
-              : entry.result === "tie"
-                ? "Tied"
-                : "Final";
-        return (
-          <td key={week} className={cellClass}>
-            <div className="cell__body">
-              <div className="cell__points">{pointsValue} pts</div>
-              <div className="cell__opponent-row">
-                <span className="cell__opponent-dir">{direction}</span>
-                <span className="cell__opponent-name">
-                  {opponentHref ? <Link href={opponentHref}>{opponentLabel}</Link> : opponentLabel}
-                </span>
-                <span className="cell__opponent-opp">{opponentPointsValue} pts</span>
-              </div>
-              <div className="cell__margin">{marginCopy}</div>
-              {isActual ? (
-                <div className={`cell__prob ${isLive ? "cell__prob--live" : "cell__prob--final"}`}>
-                  <span className="cell__prob-value">{resultLabel} • {pointsValue} – {opponentPointsValue}</span>
-                  {isLive ? (
-                    <span className="cell__prob-note">{probabilityLabel(entry.win_probability)}</span>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="cell__prob">
-                  <span className="cell__prob-value">{probabilityLabel(entry.win_probability)}</span>
-                  <div className="cell__prob-bar">
-                    <span style={{ width: `${winPct}%` }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </td>
-        );
+        return <WeekCell key={week} entry={entry} week={week} />;
       })}
     </tr>
   );

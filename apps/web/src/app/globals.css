@@ -1470,6 +1470,177 @@ a {
   padding: 12px 0;
 }
 
+.week-cell {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  font-size: 0.9rem;
+  width: 160px;
+}
+
+.week-cell__header {
+  display: grid;
+  gap: 4px;
+}
+
+.week-cell__score {
+  font-size: 1.15rem;
+  font-weight: 620;
+  color: var(--text-primary);
+}
+
+.week-cell__opponent {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.week-cell__direction {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.week-cell__opponent-name {
+  letter-spacing: 0.1em;
+  color: inherit;
+}
+
+.week-cell__opponent-score {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.week-cell__details {
+  display: grid;
+  gap: 6px;
+}
+
+.week-cell__margin {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.week-cell__result {
+  display: grid;
+  gap: 4px;
+}
+
+.week-cell__result--final {
+  background: rgba(15, 24, 45, 0.7);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.week-cell__result--live {
+  background: rgba(11, 28, 50, 0.7);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.week-cell__result-label {
+  font-size: 0.82rem;
+  font-weight: 520;
+  color: var(--text-soft);
+}
+
+.week-cell__projection {
+  display: grid;
+  gap: 4px;
+}
+
+.week-cell__probability {
+  font-size: 0.82rem;
+  font-weight: 520;
+  color: var(--text-soft);
+}
+
+.week-cell__prob-bar {
+  height: 6px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.week-cell__prob-bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.8), rgba(45, 212, 191, 0.75));
+}
+
+.week-cell__lineups {
+  display: grid;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.week-cell__team-lineup,
+.week-cell__opponent-lineup {
+  display: grid;
+  gap: 2px;
+}
+
+.week-cell__lineup-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.week-cell__players {
+  display: grid;
+  gap: 2px;
+}
+
+.week-cell__player {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.week-cell__player-name {
+  font-size: 0.76rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.week-cell__player-points {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 540;
+  flex-shrink: 0;
+}
+
+.week-cell__context {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  padding-top: 4px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.week-cell__opponent-record {
+  font-weight: 540;
+}
+
+.week-cell__opponent-odds {
+  color: var(--accent);
+  font-weight: 560;
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
