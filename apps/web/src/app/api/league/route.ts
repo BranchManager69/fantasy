@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { parse } from "csv-parse/sync";
 
-import { espnOutRoot } from "@/lib/paths";
+import { getEspnOutRoot } from "@/lib/paths";
 
 type TeamRecord = {
   season: string;
@@ -65,7 +65,8 @@ function normalizeTeam(record: TeamRecord) {
 
 export async function GET() {
   try {
-    const espnDirEntries = await fs.readdir(espnOutRoot, { withFileTypes: true });
+    const espnRoot = getEspnOutRoot();
+    const espnDirEntries = await fs.readdir(espnRoot, { withFileTypes: true });
     const seasons = espnDirEntries
       .filter((entry) => entry.isDirectory() && /^\d+$/.test(entry.name))
       .map((entry) => entry.name)
@@ -81,7 +82,7 @@ export async function GET() {
     }
 
     const season = seasons[0];
-    const teamsPath = path.join(espnOutRoot, season, "teams.csv");
+    const teamsPath = path.join(espnRoot, season, "teams.csv");
 
     try {
       await fs.access(teamsPath);

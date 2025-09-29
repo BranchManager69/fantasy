@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { simulationSeasonDir, simulationsOutRoot } from "@/lib/paths";
+import { simulationSeasonDir, getSimulationsOutRoot } from "@/lib/paths";
 import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
 
 export type SimulationPlayer = {
@@ -152,7 +152,8 @@ function scenarioFilename(scenarioId?: string): string {
 }
 
 async function listSimulationSeasons(): Promise<number[]> {
-  const entries = await fs.readdir(simulationsOutRoot, { withFileTypes: true }).catch(() => []);
+  const simRoot = getSimulationsOutRoot();
+  const entries = await fs.readdir(simRoot, { withFileTypes: true }).catch(() => []);
   return entries
     .filter((entry) => entry.isDirectory() && /^\d+$/.test(entry.name))
     .map((entry) => Number(entry.name))

@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { dataRoot } from "@/lib/paths";
+import { getDataRoot } from "@/lib/paths";
 import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
 import { getMatchupById, loadSimulation } from "@/lib/simulator-data";
 import { loadOverlay } from "@/server/scenario-service";
@@ -64,7 +64,7 @@ async function readWeeklyScores(season: number, week: number): Promise<Map<numbe
   }
 
   const filePath = path.join(
-    dataRoot,
+    getDataRoot(),
     "out",
     "espn",
     String(season),

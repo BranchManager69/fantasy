@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { dataRoot } from "@/lib/paths";
+import { getDataRoot } from "@/lib/paths";
 import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
 import { listScenarios } from "@/lib/scenario-data";
 import { loadSimulation, type RestOfSeasonSimulation, type SimulationWeekMatchup } from "@/lib/simulator-data";
@@ -15,7 +15,7 @@ import type {
   ScenarioOverlay,
 } from "@/types/scenario";
 
-const overlaysRoot = path.join(dataRoot, "overlays");
+const overlaysRoot = path.join(getDataRoot(), "overlays");
 
 export async function loadOverlay(season: number, scenarioId: string): Promise<ScenarioOverlay | null> {
   const seasonDir = path.join(overlaysRoot, String(season));

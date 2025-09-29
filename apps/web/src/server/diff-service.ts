@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { historyRoot } from "@/lib/paths";
+import { getHistoryRoot } from "@/lib/paths";
 
-const DIFF_LOG_PATH = path.join(historyRoot, "refresh-diff.log");
+const DIFF_LOG_PATH = path.join(getHistoryRoot(), "refresh-diff.log");
 
 export type RefreshDiffTeamDelta = {
   teamId?: number | null;
