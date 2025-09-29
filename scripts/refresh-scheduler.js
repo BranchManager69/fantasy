@@ -847,7 +847,8 @@ function archiveArtifacts(finishedAt) {
     } catch (error) {
       console.error(`[scheduler] failed to archive simulation snapshot: ${error.message}`);
     }
-    pruneSnapshots(simulationHistoryDir, MAX_SIM_HISTORY, "simulation");
+    // Pruning disabled: deferred archiving prevents bloat, keep full season history
+    // pruneSnapshots(simulationHistoryDir, MAX_SIM_HISTORY, "simulation");
 
     // Archive scoreboard snapshot
     const scoreboardHistoryDirFinal = scoreboardHistoryDir; // alias for clarity
@@ -868,7 +869,8 @@ function archiveArtifacts(finishedAt) {
     } catch (error) {
       console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
     }
-    pruneSnapshots(scoreboardHistoryDirFinal, MAX_SCORE_HISTORY, "scoreboard");
+    // Pruning disabled: deferred archiving prevents bloat, keep full season history
+    // pruneSnapshots(scoreboardHistoryDirFinal, MAX_SCORE_HISTORY, "scoreboard");
   }
 
   return summary;
