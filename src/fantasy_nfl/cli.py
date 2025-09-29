@@ -16,6 +16,7 @@ from .espn import EspnClient, ensure_views
 from .merge import DataAssembler
 from .normalize import (
     EspnSnapshot,
+    normalize_league_settings,
     normalize_roster,
     normalize_schedule,
     normalize_teams,
@@ -257,19 +258,23 @@ def espn_normalize(env_file: Path) -> None:
     team_view = snapshot.load_view("mTeam")
     roster_view = snapshot.load_view("mRoster")
     matchup_view = snapshot.load_view("mMatchup")
+    settings_view = snapshot.load_view("mSettings")
 
     teams_df = normalize_teams(team_view)
     roster_df = normalize_roster(roster_view)
     schedule_df = normalize_schedule(matchup_view)
+    league_settings_df = normalize_league_settings(settings_view)
 
     out_dir = settings.data_root / "out" / "espn" / str(settings.espn_season)
     teams_csv = write_dataframe(teams_df, out_dir / "teams.csv")
     roster_csv = write_dataframe(roster_df, out_dir / "roster.csv")
     schedule_csv = write_dataframe(schedule_df, out_dir / "schedule.csv")
+    league_settings_csv = write_dataframe(league_settings_df, out_dir / "league_settings.csv")
 
     click.echo(f"Saved roster → {roster_csv}")
     click.echo(f"Saved teams → {teams_csv}")
     click.echo(f"Saved schedule → {schedule_csv}")
+    click.echo(f"Saved league settings → {league_settings_csv}")
 
 
 @espn.command("build-week")
@@ -443,19 +448,23 @@ def refresh_week(
     team_view = cached_views.get("mTeam") or snapshot.load_view("mTeam")
     roster_view = cached_views.get("mRoster") or snapshot.load_view("mRoster")
     matchup_view = cached_views.get("mMatchup") or snapshot.load_view("mMatchup")
+    settings_view = cached_views.get("mSettings") or snapshot.load_view("mSettings")
 
     teams_df = normalize_teams(team_view)
     roster_df = normalize_roster(roster_view)
     schedule_df = normalize_schedule(matchup_view)
+    league_settings_df = normalize_league_settings(settings_view)
 
     out_dir = settings.data_root / "out" / "espn" / str(target_season)
     teams_csv = write_dataframe(teams_df, out_dir / "teams.csv")
     roster_csv = write_dataframe(roster_df, out_dir / "roster.csv")
     schedule_csv = write_dataframe(schedule_df, out_dir / "schedule.csv")
+    league_settings_csv = write_dataframe(league_settings_df, out_dir / "league_settings.csv")
 
     click.echo(f"Saved teams → {teams_csv}")
     click.echo(f"Saved roster → {roster_csv}")
     click.echo(f"Saved schedule → {schedule_csv}")
+    click.echo(f"Saved league settings → {league_settings_csv}")
 
     transactions_view = cached_views.get("mTransactions2")
     if transactions_view is None:

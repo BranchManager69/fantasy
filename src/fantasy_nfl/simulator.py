@@ -635,6 +635,10 @@ class RestOfSeasonSimulator:
                     f"No schedule.csv found for season {season}; run `fantasy espn normalize` first."
                 )
 
+            # Load playoff_slots from league_settings.csv if available
+            if playoff_slots == DEFAULT_PLAYOFF_SLOTS:
+                playoff_slots = self._load_playoff_slots(season) or DEFAULT_PLAYOFF_SLOTS
+
             projection_weeks = self._detect_projection_weeks(season)
             if not projection_weeks:
                 raise FileNotFoundError(
@@ -1064,6 +1068,22 @@ class RestOfSeasonSimulator:
         df["away_team_id"] = df["away_team_id"].astype(int)
         df["week"] = df["week"].astype(int)
         return df
+
+    def _load_playoff_slots(self, season: int) -> Optional[int]:
+        """Load playoff_team_count from league_settings.csv."""
+        settings_path = self.settings.data_root / "out" / "espn" / str(season) / "league_settings.csv"
+        if not settings_path.exists():
+            return None
+        try:
+            df = pd.read_csv(settings_path)
+            if df.empty:
+                return None
+            playoff_team_count = df.iloc[0].get("playoff_team_count")
+            if pd.notna(playoff_team_count):
+                return int(playoff_team_count)
+        except Exception:
+            pass
+        return None
 
     def _detect_projection_weeks(self, season: int) -> list[int]:
         proj_dir = self.settings.data_root / "out" / "projections" / str(season)

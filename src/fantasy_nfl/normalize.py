@@ -129,6 +129,28 @@ def normalize_teams(team_view: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def normalize_league_settings(settings_view: dict) -> pd.DataFrame:
+    """Extract league-level settings like playoff configuration."""
+    settings = settings_view.get("settings", {})
+    schedule_settings = settings.get("scheduleSettings", {})
+
+    row = {
+        "season": settings_view.get("seasonId"),
+        "league_id": settings_view.get("id"),
+        "league_name": settings.get("name"),
+        "size": settings.get("size"),
+        "regular_season_matchups": schedule_settings.get("matchupPeriodCount"),
+        "matchup_period_length": schedule_settings.get("matchupPeriodLength"),
+        "playoff_team_count": schedule_settings.get("playoffTeamCount"),
+        "playoff_matchup_period_length": schedule_settings.get("playoffMatchupPeriodLength"),
+        "playoff_reseed": schedule_settings.get("playoffReseed"),
+        "playoff_seeding_rule": schedule_settings.get("playoffSeedingRule"),
+        "matchup_tie_rule": settings.get("scoringSettings", {}).get("matchupTieRule"),
+        "scoring_type": settings.get("scoringSettings", {}).get("scoringType"),
+    }
+    return pd.DataFrame([row])
+
+
 def normalize_roster(roster_view: dict) -> pd.DataFrame:
     rows = []
     season = roster_view.get("seasonId")
