@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local assets (do not commit league-specific media)
+public/owners/
+public/owners_alt/
+public/animation/

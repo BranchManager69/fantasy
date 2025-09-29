@@ -5,7 +5,6 @@ import {
   formatLiveMargin,
   formatMargin,
   formatOwners,
-  formatRecord,
   probabilityClass,
   probabilityLabel,
 } from "@/lib/formatters";
@@ -13,6 +12,7 @@ import { RefreshControls } from "@/components/refresh-controls";
 import { ScenarioDrawer } from "@/components/scenario-drawer";
 import { ScenarioSwitcher } from "@/components/scenario-switcher";
 import { LiveActivityFeed } from "@/components/live-activity-feed";
+import { OwnerAvatars } from "@/components/owner-avatars";
 import {
   type MonteCarloSummary,
   type MonteCarloTeamSummary,
@@ -71,21 +71,29 @@ function TeamRow({
   const mc = monteCarlo ?? null;
   const playoffCopy = mc ? `${Math.round(mc.playoff_odds * 100)}% playoff odds` : null;
   const seedCopy = mc && mc.top_seed_odds > 0.01 ? `${Math.round(mc.top_seed_odds * 100)}% for #1 seed` : null;
-  const avgWinsCopy = mc ? `${mc.average_wins.toFixed(1)} avg wins` : null;
+  const projectedWins = record?.wins ?? null;
+  const winsDeltaRaw = mc && projectedWins !== null ? mc.average_wins - projectedWins : null;
+  const avgWinsCopy = winsDeltaRaw !== null && Math.abs(winsDeltaRaw) >= 0.3
+    ? `${winsDeltaRaw >= 0 ? "+" : ""}${winsDeltaRaw.toFixed(1)}W`
+    : null;
   return (
     <tr>
       <th scope="row">
         <div className="team-heading">
-          <Link href={`/teams/${team.team_id}`} className="team-heading__name">
+          <Link href={`/teams/${team.team_id}`} className="team-heading__name" title={team.name}>
             {team.name}
           </Link>
+          <span className="team-heading__owners" title={formatOwners(team.owners)}>
+            <OwnerAvatars teamId={team.team_id} ownersCount={team.owners.length} /> {formatOwners(team.owners)}
+          </span>
           <div className="team-heading__meta">
-            <span className="team-heading__record">{formatRecord(record)}</span>
-            {avgWinsCopy ? <span className="team-heading__avg">{avgWinsCopy}</span> : null}
+            <span className="team-heading__record">{formatSimpleRecord(record)}</span>
+            {avgWinsCopy ? (
+              <span className="team-heading__avg" title="Expected wins vs projected record (Monte Carlo)">{avgWinsCopy}</span>
+            ) : null}
             {playoffCopy ? <span className="team-heading__prob">{playoffCopy}</span> : null}
             {seedCopy ? <span className="team-heading__seed">{seedCopy}</span> : null}
           </div>
-          <span className="team-heading__owners">{formatOwners(team.owners)}</span>
         </div>
       </th>
       {weeks.map((week) => {
@@ -297,7 +305,7 @@ export default async function Home({
         losses: recordLeader.metrics.losses,
         ties: recordLeader.metrics.ties,
       }),
-      meta: recordProjected ? `Projected ${formatRecord(recordProjected)}` : null,
+      meta: recordProjected ? `Projected ${formatSimpleRecord(recordProjected)}` : null,
       secondary:
         recordLeader.metrics.pointDifferential !== 0
           ? `Diff ${recordLeader.metrics.pointDifferential >= 0 ? "+" : ""}${recordLeader.metrics.pointDifferential.toFixed(1)}`

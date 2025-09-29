@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import {
   formatMargin,
   formatOwners,
-  formatRecord,
   probabilityLabel,
   probabilityTone,
 } from "@/lib/formatters";
@@ -301,7 +300,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 : ` · ${opponentMetrics.pointsFor.toFixed(1)} PF`}
             </p>
             {opponentStanding ? (
-              <p className="team-summary__meta">Projected {formatRecord(opponentStanding.projected_record)}</p>
+              <p className="team-summary__meta">Projected {formatSimpleRecord(opponentStanding.projected_record)}</p>
             ) : null}
           </>
         ) : null}
@@ -448,7 +447,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
             {standing ? (
               <div>
                 <span className="team-hero__label">Projected Record</span>
-                <span className="team-hero__value">{formatRecord(standing.projected_record)}</span>
+                <span className="team-hero__value">{formatSimpleRecord(standing.projected_record)}</span>
               </div>
             ) : null}
             {standing ? (
@@ -565,7 +564,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                     <span className="team-roster__metrics-value">{formatSimpleRecord({ wins: opponentMetrics.wins, losses: opponentMetrics.losses, ties: opponentMetrics.ties })}</span>
                     <span className="team-roster__metrics-sub">PPG {opponentMetrics.pointsPerGame !== null ? opponentMetrics.pointsPerGame.toFixed(1) : opponentMetrics.pointsFor.toFixed(1)} · Diff {opponentMetrics.pointDifferential >= 0 ? '+' : ''}{opponentMetrics.pointDifferential.toFixed(1)}</span>
                     {opponentStanding ? (
-                      <span className="team-roster__metrics-sub">Projected {formatRecord(opponentStanding.projected_record)}</span>
+                      <span className="team-roster__metrics-sub">Projected {formatSimpleRecord(opponentStanding.projected_record)}</span>
                     ) : null}
                   </div>
                 ) : null}

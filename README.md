@@ -21,17 +21,17 @@
 </p>
 
 <p align="center">
-  ESPN + nflverse ingester, scoring engine, and Next.js dashboard that power live standings, Monte Carlo playoff odds, and scenario overlays without touching the baseline data pull.
+  A comprehensive fantasy football analytics platform that combines ESPN league data with advanced Monte Carlo simulations to provide live standings, playoff odds, and scenario analysis through an intuitive web dashboard.
 </p>
 
 ---
 
 ## Highlights
 
-- **Historical accuracy** – completed weeks are sourced directly from ESPN scoreboards and locked into the simulator before Monte Carlo runs begin.
-- **Overlay system** – scenario JSON files layer on top of the baseline artifacts so commissioners can explore what-if edits without mutating source pulls.
-- **End-to-end refresh** – `poetry run fantasy refresh-all` hydrates raw views, scoring, and projections for a season; the frontend pulls the latest artifacts directly from `data/out/`.
-- **Next.js control plane** – the `/` and `/teams/[id]` screens surface the simulator grid with scenario switching, manual refresh triggers, and status readouts.
+- **Live Monte Carlo simulations** – Real-time playoff odds and rest-of-season projections powered by thousands of Monte Carlo runs using actual ESPN league data.
+- **Scenario exploration** – Commissioners can create "what-if" overlays to explore alternative outcomes without affecting the baseline data or league settings.
+- **Automated data pipeline** – Seamless integration with ESPN APIs and nflverse for accurate, up-to-date player projections and completed game results.
+- **Professional dashboard** – Modern Next.js interface with team-by-team breakdowns, live game tracking, and detailed analytics for every matchup.
 
 ---
 
@@ -108,18 +108,10 @@ The Next.js refresh button calls the `/api/sim/rest-of-season/trigger` route. Be
 
 ### Automatic refresh scheduler
 
-- **Runtime profile** – the full `refresh-all` + baseline sim combo currently completes in ~11 seconds on the branch manager host (latest run: 10.9s wall clock, 161 MB peak RSS). This leaves ample headroom for a 1-minute cadence during live games.
-- **Scheduler entry point** – `npm run refresh-scheduler` executes `scripts/refresh-scheduler.js`, which pings the same API endpoint as the UI button and respects the in-process job lock. The default windows are keyed to NFL broadcast times in Eastern Time:
-  - Thursday 7:00 PM–12:30 AM, Sunday 9:30 AM–12:30 PM / 12:00 PM–8:30 PM / 8:00 PM–12:30 AM, Monday 7:00 PM–12:30 AM (plus the late-night spillovers).
-  - During those windows, the scheduler fires every **1 minute**; outside of them it falls back to a **15-minute** cadence.
-- **Overrides** – drop a `config/refresh-overrides.json` (example: `config/refresh-overrides.sample.json`) to add or tweak windows for holiday games. Each entry accepts `{ "start": "HH:MM", "end": "HH:MM", "intervalMinutes": 1, "label": "thanksgiving" }`.
-- **PM2 integration** – run it alongside the web app:
-  ```bash
-  pm2 start npm --name fantasy --cwd /home/branchmanager/tools/fantasy -- run refresh-scheduler
-  ```
-  Environment knobs include `FANTASY_REFRESH_API_BASE` (default `http://127.0.0.1:40435`), `FANTASY_REFRESH_GAME_INTERVAL_MINUTES`, and `FANTASY_REFRESH_IDLE_INTERVAL_MINUTES`.
-- **Diff history** – each successful run snapshots artifacts under `data/history/` and appends a JSON line to `data/history/refresh-diff.log`, capturing team totals and top player swings between runs (tune retention with `FANTASY_REFRESH_MAX_SIM_HISTORY`, `FANTASY_REFRESH_MAX_SCORE_HISTORY`, and `FANTASY_REFRESH_MAX_DIFF_LOG_LINES`).
-- **Quick check** – `npm run refresh-last-diff` pretty-prints the latest entry from `refresh-diff.log`, so you can answer “what changed?” without digging through JSON.
+- **Game-time updates** – Automatically refreshes during NFL broadcast windows (Thu/Sun/Mon evenings) every minute, with 15-minute intervals otherwise
+- **Custom schedules** – Add `config/refresh-overrides.json` for holiday games or special events
+- **Background service** – Run `npm run refresh-scheduler` to enable automatic updates
+- **Change tracking** – Use `npm run refresh-last-diff` to see what changed in the latest update
 
 ---
 
@@ -178,21 +170,18 @@ After editing an overlay, re-run the simulator with `--scenario <id>` to regener
 }
 ```
 
-- `teams[].entries[]` mirrors the scoring artifact schema (`player_name`, `lineup_slot`, `score_total`, `projected_points`, etc.).
-- `matchups` enforces team totals + winner so downstream standings remain consistent.
-- `projection_weeks` can appear as `projection_weeks` or `projections`; both map to the same structure for backward compatibility.
+- `teams[].entries[]` contains player overrides for scores or projections
+- `matchups` defines game results and winners to keep standings consistent
 
 ---
 
 ## Frontend Usage
 
-- The server resolves data directories relative to repo root (`apps/web/src/lib/paths.ts`). Override with `FANTASY_REPO_ROOT` when running outside the mono-repo.
-- Scenario picker options come from `data/overlays/<season>/*.json`. Baseline is always available even if no overlays exist.
-- API routes:
-  - `GET /api/sim/rest-of-season?scenario=<id>` returns the latest simulator JSON for the requested scenario (404 if the overlay has not been simulated yet).
-  - `POST /api/sim/rest-of-season/trigger?scenario=<id>` kicks off the build; the UI uses baseline-only to keep runtime reasonable.
-  - `GET /api/sim/rest-of-season/status?scenario=<id>` reports job state plus the last completed dataset timestamp.
-- The hydration timestamp displayed in `RefreshControls` is sourced from `dataset.metadata.generated_at`; mismatches indicate the baseline/scenario JSONs were generated at different times.
+- **Scenario switching** – Choose from available overlays in `data/overlays/<season>/`
+- **API endpoints**:
+  - `GET /api/sim/rest-of-season?scenario=<id>` – Get simulation results
+  - `POST /api/sim/rest-of-season/trigger` – Trigger new simulation run
+  - `GET /api/sim/rest-of-season/status` – Check simulation status
 
 ---
 
@@ -206,12 +195,13 @@ After editing an overlay, re-run the simulator with `--scenario <id>` to regener
 
 ## Testing & Quality
 
-- Run backend tests:
-  ```bash
-  poetry run pytest
-  ```
-- Add targeted tests in `tests/test_cli_scenario.py` when expanding the scenario CLI.
-- Frontend smoke tests run via `npm run lint` / `npm run test` (configure as needed for Next.js workspace).
+```bash
+# Run backend tests
+poetry run pytest
+
+# Run frontend linting
+npm run lint
+```
 
 ---
 
