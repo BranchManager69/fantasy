@@ -17,6 +17,7 @@ import pandas as pd
 from .normalize import LINEUP_SLOT_NAMES, POSITION_NAMES
 from .overlays import BASELINE_SCENARIO_ID, OverlayStore, ScenarioOverlay
 from .settings import AppSettings
+from .espn_nfl import NFLGameState, calculate_live_projection, load_nfl_game_state
 
 
 DEFAULT_SIGMA = 18.0  # point spread standard deviation assumption for win probabilities
@@ -602,6 +603,82 @@ class RestOfSeasonSimulator:
 
         return totals
 
+    def _load_nfl_game_state(self, season: int, week: int) -> dict[str, NFLGameState]:
+        game_state_path = (
+            self.settings.data_root
+            / "raw"
+            / "nfl"
+            / str(season)
+            / f"game_state_week_{week}.json"
+        )
+        return load_nfl_game_state(game_state_path)
+
+    def _load_player_to_pro_team_map(self, season: int) -> dict[int, str]:
+        roster_path = self.settings.data_root / "out" / "espn" / str(season) / "roster.csv"
+        mapping: dict[int, str] = {}
+        if not roster_path.exists():
+            return mapping
+        try:
+            df = pd.read_csv(roster_path)
+        except Exception:
+            return mapping
+        if df.empty:
+            return mapping
+        # prefer latest row per player id
+        df = df.loc[df["espn_player_id"].notna()].copy()
+        df["espn_player_id"] = df["espn_player_id"].astype(int)
+        df = df.drop_duplicates("espn_player_id", keep="last")
+        for _, row in df.iterrows():
+            player_id = int(row["espn_player_id"]) if pd.notna(row.get("espn_player_id")) else None
+            pro_team_id = row.get("pro_team_id")
+            if player_id is None or pd.isna(pro_team_id):
+                continue
+            try:
+                mapping[player_id] = str(int(pro_team_id))
+            except Exception:
+                mapping[player_id] = str(pro_team_id)
+        return mapping
+
+    def _load_week_projection_with_live_blend(
+        self,
+        season: int,
+        week: int,
+        nfl_game_states: dict[str, NFLGameState],
+    ) -> pd.DataFrame:
+        proj_df = self._load_week_projection(season, week)
+        if proj_df.empty:
+            return proj_df
+
+        # Load actuals (scoreboard if available)
+        scores_df = self._load_week_scores(season, week)
+        # Merge by player id
+        merged = proj_df.merge(
+            scores_df[["espn_player_id", "score_total"]] if not scores_df.empty else pd.DataFrame(columns=["espn_player_id", "score_total"]),
+            on="espn_player_id",
+            how="left",
+        )
+
+        pro_team_map = self._load_player_to_pro_team_map(season)
+
+        def _calc(row: pd.Series) -> float:
+            actual_pts = float(row.get("score_total", 0.0) or 0.0)
+            original_proj = float(row.get("projected_points", 0.0) or 0.0)
+            player_id = row.get("espn_player_id")
+            pro_team_id = None
+            try:
+                if pd.notna(player_id):
+                    pro_team_id = pro_team_map.get(int(player_id))
+            except Exception:
+                pro_team_id = None
+            gs = nfl_game_states.get(str(pro_team_id)) if pro_team_id is not None else None
+            return float(calculate_live_projection(actual_pts, original_proj, gs))
+
+        if nfl_game_states:
+            merged["projected_points"] = merged.apply(_calc, axis=1)
+        # else: leave original projections
+
+        return merged
+
     # ---------------------------
     # Public API
     # ---------------------------
@@ -684,6 +761,12 @@ class RestOfSeasonSimulator:
                 team_actuals = self._summarize_team_actuals(teams, scores_df)
                 week_schedule = schedule.loc[schedule["week"] == week]
 
+                # Build per-team LIVE projections for in-progress week using per-player blending
+                # with NFL game states (actual + projection × remaining_pct per player).
+                nfl_states = self._load_nfl_game_state(season, week)
+                live_proj_df = self._load_week_projection_with_live_blend(season, week, nfl_states)
+                team_live = self._summarize_team_projections(teams, live_proj_df) if not live_proj_df.empty else {}
+
                 for _, matchup in week_schedule.iterrows():
                     home_team_id = int(matchup["home_team_id"])
                     away_team_id = int(matchup["away_team_id"])
@@ -734,11 +817,18 @@ class RestOfSeasonSimulator:
                             home_prob_final = away_prob_final = 0.5
                             home_result = away_result = "tie"
                     else:
-                        home_prob_final = away_prob_final = 0.5
+                        # In-progress: use per-team LIVE projections derived from per-player live blending
+                        home_live_total = team_live.get(home_team_id).projected_points if home_team_id in team_live else home_points
+                        away_live_total = team_live.get(away_team_id).projected_points if away_team_id in team_live else away_points
+                        home_prob_final, away_prob_final = self._estimate_win_probabilities(home_live_total, away_live_total, sigma)
                         home_result = away_result = None
 
-                    home_proj.projected_points = round(home_points, 2)
-                    away_proj.projected_points = round(away_points, 2)
+                    if is_final:
+                        home_proj.projected_points = round(home_points, 2)
+                        away_proj.projected_points = round(away_points, 2)
+                    else:
+                        home_proj.projected_points = round(home_live_total, 2)
+                        away_proj.projected_points = round(away_live_total, 2)
 
                     if is_final:
                         standings_tracker[home_team_id]["points"] += home_points
@@ -760,10 +850,10 @@ class RestOfSeasonSimulator:
                             "matchup_id": matchup_id,
                             "opponent_team_id": away_team_id,
                             "is_home": True,
-                            "projected_points": home_points,
-                            "opponent_projected_points": away_points,
+                            "projected_points": home_proj.projected_points,
+                            "opponent_projected_points": away_proj.projected_points,
                             "win_probability": home_prob_final,
-                            "projected_margin": margin,
+                            "projected_margin": home_proj.projected_points - away_proj.projected_points,
                             "is_actual": True,
                             "result": home_result,
                             "status": status_raw,
@@ -777,10 +867,10 @@ class RestOfSeasonSimulator:
                             "matchup_id": matchup_id,
                             "opponent_team_id": home_team_id,
                             "is_home": False,
-                            "projected_points": away_points,
-                            "opponent_projected_points": home_points,
+                            "projected_points": away_proj.projected_points,
+                            "opponent_projected_points": home_proj.projected_points,
                             "win_probability": away_prob_final,
-                            "projected_margin": -margin,
+                            "projected_margin": away_proj.projected_points - home_proj.projected_points,
                             "is_actual": True,
                             "result": away_result,
                             "status": status_raw,
@@ -804,10 +894,11 @@ class RestOfSeasonSimulator:
                         "home": home_result,
                         "away": away_result,
                     }
-                    matchup_dict["final_score"] = {
-                        "home": round(home_points, 2),
-                        "away": round(away_points, 2),
-                    }
+                    if is_final:
+                        matchup_dict["final_score"] = {
+                            "home": round(home_points, 2),
+                            "away": round(away_points, 2),
+                        }
                     actual_matchups_by_week[week].append(matchup_dict)
 
             base_records = {
@@ -819,8 +910,20 @@ class RestOfSeasonSimulator:
                 for team_id in teams
             }
 
+            # Preload NFL game states (if present) for potential live blending
+            nfl_game_states_by_week: dict[int, dict[str, NFLGameState]] = {}
             for week in weeks_to_process:
-                projections = self._load_week_projection(season, week)
+                try:
+                    nfl_game_states_by_week[week] = self._load_nfl_game_state(season, week)
+                except Exception:
+                    nfl_game_states_by_week[week] = {}
+
+            for week in weeks_to_process:
+                game_states = nfl_game_states_by_week.get(week) or {}
+                if game_states:
+                    projections = self._load_week_projection_with_live_blend(season, week, game_states)
+                else:
+                    projections = self._load_week_projection(season, week)
                 if projections.empty:
                     continue
 

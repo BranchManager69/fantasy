@@ -32,6 +32,14 @@ from .projections import ProjectionManager
 from .scoring import ScoreEngine, ScoringConfig
 from .nflverse import NflverseDownloader
 from .settings import AppSettings, get_settings
+from .espn_nfl import (
+    NFLGameState,
+    calculate_live_projection,
+    fetch_nfl_scoreboard,
+    load_nfl_game_state,
+    parse_nfl_game_states,
+    save_nfl_game_state,
+)
 from .fantasycalc import (
     FantasyCalcParams,
     fetch_redraft_values,
@@ -306,6 +314,42 @@ def espn_build_week(season: int | None, week: int | None, env_file: Path) -> Non
 @cli.group()
 def nflverse() -> None:
     """nflverse data utilities."""
+@cli.group("nfl")
+def nfl() -> None:
+    """NFL live game data commands."""
+
+
+@nfl.command("fetch-game-state")
+@click.option("--season", type=int, required=True)
+@click.option("--week", type=int, required=True)
+@click.option(
+    "--env-file",
+    type=click.Path(path_type=Path, dir_okay=False, exists=False, readable=True),
+    default=".env",
+    show_default=True,
+    help="Path to the .env file to load.",
+)
+def nfl_fetch_game_state(season: int, week: int, env_file: Path) -> None:
+    """Fetch live NFL game state from ESPN NFL API and save to data/raw/nfl/<season>/game_state_week_<week>.json."""
+
+    settings = get_settings(env_file)
+    click.echo(f"Fetching NFL game state for week {week}...")
+    try:
+        scoreboard = fetch_nfl_scoreboard(week=week)
+        game_states = parse_nfl_game_states(scoreboard)
+        click.echo(f"Found {len(game_states)} NFL team game states")
+        output_path = (
+            settings.data_root
+            / "raw"
+            / "nfl"
+            / str(season)
+            / f"game_state_week_{week}.json"
+        )
+        saved = save_nfl_game_state(game_states, output_path)
+        click.echo(f"Saved game state → {saved}")
+    except Exception as exc:  # pragma: no cover - network/runtime dependent
+        raise click.ClickException(f"Failed to fetch NFL game state: {exc}") from exc
+
 
 
 @nflverse.command("pull")
@@ -546,6 +590,22 @@ def refresh_week(
         else:
             scoreboard_path = live_client.save_view("mScoreboard", scoreboard, suffix=f"week-{target_week}")
             click.echo(f"Saved mScoreboard → {scoreboard_path}")
+
+    # Fetch NFL game state for live blending and archival (best effort)
+    click.echo(f"[3/7] Fetching NFL game state for week {target_week}")
+    try:
+        nfl_output_path = (
+            settings.data_root
+            / "raw"
+            / "nfl"
+            / str(target_season)
+            / f"game_state_week_{target_week}.json"
+        )
+        states = parse_nfl_game_states(fetch_nfl_scoreboard(week=target_week))
+        save_nfl_game_state(states, nfl_output_path)
+        click.echo(f"Saved {len(states)} NFL team game states → {nfl_output_path}")
+    except Exception as exc:  # pragma: no cover - network/runtime dependent
+        click.echo(f"Warning: Failed to fetch NFL game state: {exc}", err=True)
 
     downloader = NflverseDownloader(settings)
     players_csv = downloader.fetch_players(force=force_nflverse)
