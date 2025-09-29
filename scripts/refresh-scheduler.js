@@ -359,13 +359,18 @@ function summarizeDiff(finishedAt, season, currentWeek, teamIndex, scoreboardSna
   lastScoreSnapshot = scoreboardSnapshot;
 
   if (!diff.teamDiffs.length && !diff.playerDiffs.length) {
-    return {
+    const summary = {
       finishedAt,
+      season,
       week: currentWeek,
       message: `No stat deltas detected for week ${currentWeek}`,
       teamDiffs: [],
       playerDiffs: [],
+      headlineTeams: [],
+      headlinePlayers: [],
     };
+    appendDiffLog(summary);
+    return summary;
   }
 
   const topTeams = diff.teamDiffs.slice(0, 6).map((entry) => `${entry.abbrev}: ${entry.delta >= 0 ? "+" : ""}${entry.delta.toFixed(2)} (→ ${entry.currentTotal.toFixed(2)})`);
