@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import random
 import re
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -1000,9 +1002,33 @@ class RestOfSeasonSimulator:
         output_path: Path,
     ) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        # Ensure all values are JSON-serializable by converting via json dumps/loads roundtrip
+        # Serialize once
         serialized = json.dumps(dataset, indent=2)
-        output_path.write_text(serialized)
+
+        # Write atomically: write to a temp file in the same directory, fsync, then replace
+        temp_file = None
+        try:
+            fd, temp_path_str = tempfile.mkstemp(
+                dir=str(output_path.parent),
+                prefix=output_path.stem + "__",
+                suffix=output_path.suffix + ".tmp",
+                text=True,
+            )
+            temp_file = Path(temp_path_str)
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(serialized)
+                handle.flush()
+                os.fsync(handle.fileno())
+            # Atomic replace ensures readers see either the old or the new complete file
+            os.replace(temp_file, output_path)
+        finally:
+            # Best-effort cleanup if something went wrong before replace
+            try:
+                if temp_file is not None and temp_file.exists():
+                    temp_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
         return output_path
 
     # ---------------------------
