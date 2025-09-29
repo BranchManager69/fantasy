@@ -635,9 +635,14 @@ class RestOfSeasonSimulator:
                     f"No schedule.csv found for season {season}; run `fantasy espn normalize` first."
                 )
 
-            # Load playoff_slots from league_settings.csv if available
+            # Load playoff_slots from league_settings.csv (required)
             if playoff_slots == DEFAULT_PLAYOFF_SLOTS:
-                playoff_slots = self._load_playoff_slots(season) or DEFAULT_PLAYOFF_SLOTS
+                loaded_playoff_slots = self._load_playoff_slots(season)
+                if loaded_playoff_slots is None:
+                    raise FileNotFoundError(
+                        f"No league_settings.csv found for season {season}; run `fantasy espn normalize` first."
+                    )
+                playoff_slots = loaded_playoff_slots
 
             projection_weeks = self._detect_projection_weeks(season)
             if not projection_weeks:
