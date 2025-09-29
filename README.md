@@ -118,7 +118,8 @@ The Next.js refresh button calls the `/api/sim/rest-of-season/trigger` route. Be
   pm2 start npm --name fantasy --cwd /home/branchmanager/tools/fantasy -- run refresh-scheduler
   ```
   Environment knobs include `FANTASY_REFRESH_API_BASE` (default `http://127.0.0.1:40435`), `FANTASY_REFRESH_GAME_INTERVAL_MINUTES`, and `FANTASY_REFRESH_IDLE_INTERVAL_MINUTES`.
-- **Diff history** – each successful run snapshots artifacts under `data/history/` and appends a JSON line to `data/history/refresh-diff.log`, capturing team totals and top player swings between runs.
+- **Diff history** – each successful run snapshots artifacts under `data/history/` and appends a JSON line to `data/history/refresh-diff.log`, capturing team totals and top player swings between runs (tune retention with `FANTASY_REFRESH_MAX_SIM_HISTORY`, `FANTASY_REFRESH_MAX_SCORE_HISTORY`, and `FANTASY_REFRESH_MAX_DIFF_LOG_LINES`).
+- **Quick check** – `npm run refresh-last-diff` pretty-prints the latest entry from `refresh-diff.log`, so you can answer “what changed?” without digging through JSON.
 
 ---
 

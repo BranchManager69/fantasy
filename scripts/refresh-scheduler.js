@@ -22,6 +22,10 @@ const OVERRIDES_PATH = process.env.FANTASY_REFRESH_OVERRIDE_PATH
   ? path.resolve(process.cwd(), process.env.FANTASY_REFRESH_OVERRIDE_PATH)
   : path.resolve(process.cwd(), "config", "refresh-overrides.json");
 
+const MAX_SIM_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SIM_HISTORY || 48);
+const MAX_SCORE_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SCORE_HISTORY || 96);
+const MAX_DIFF_LOG_LINES = Number(process.env.FANTASY_REFRESH_MAX_DIFF_LOG_LINES || 2000);
+
 const WEEKDAY_MAP = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
 const hm = (hours, minutes) => hours * 60 + minutes;
@@ -348,14 +352,71 @@ function diffScoreSnapshots(previous, current, teamIndex) {
 function appendDiffLog(entry) {
   ensureDir(path.dirname(DIFF_LOG_PATH));
   fs.appendFileSync(DIFF_LOG_PATH, `${JSON.stringify(entry)}\n`, "utf8");
+  pruneDiffLog();
 }
 
-function summarizeDiff(finishedAt, season, currentWeek, teamIndex, scoreboardSnapshot) {
+function pruneDiffLog() {
+  if (MAX_DIFF_LOG_LINES <= 0 || !fs.existsSync(DIFF_LOG_PATH)) {
+    return;
+  }
+  try {
+    const lines = fs
+      .readFileSync(DIFF_LOG_PATH, "utf8")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length > MAX_DIFF_LOG_LINES) {
+      const trimmed = lines.slice(-MAX_DIFF_LOG_LINES);
+      fs.writeFileSync(`${DIFF_LOG_PATH}.tmp`, `${trimmed.join("\n")}\n`, "utf8");
+      fs.renameSync(`${DIFF_LOG_PATH}.tmp`, DIFF_LOG_PATH);
+    }
+  } catch (error) {
+    console.error(`[scheduler] failed to prune diff log: ${error.message}`);
+  }
+}
+
+function pruneSnapshots(dirPath, maxCount, label) {
+  if (maxCount <= 0 || !fs.existsSync(dirPath)) {
+    return;
+  }
+  try {
+    const entries = fs
+      .readdirSync(dirPath)
+      .map((name) => {
+        const fullPath = path.join(dirPath, name);
+        const stats = fs.statSync(fullPath);
+        return { name, fullPath, stats };
+      })
+      .filter((entry) => entry.stats.isFile())
+      .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+
+    const excess = entries.slice(maxCount);
+    for (const entry of excess) {
+      try {
+        fs.unlinkSync(entry.fullPath);
+      } catch (error) {
+        console.error(`[scheduler] failed to remove old ${label} snapshot ${entry.name}: ${error.message}`);
+      }
+    }
+  } catch (error) {
+    console.error(`[scheduler] failed to prune ${label} history: ${error.message}`);
+  }
+}
+
+function summarizeDiff(
+  finishedAt,
+  season,
+  currentWeek,
+  teamIndex,
+  scoreboardSnapshot,
+  previousSnapshot,
+) {
   if (!scoreboardSnapshot) {
     return null;
   }
 
-  const diff = diffScoreSnapshots(lastScoreSnapshot, scoreboardSnapshot, teamIndex);
+  const baselinePrevious = previousSnapshot ?? lastScoreSnapshot;
+  const diff = diffScoreSnapshots(baselinePrevious, scoreboardSnapshot, teamIndex);
   lastScoreSnapshot = scoreboardSnapshot;
 
   if (!diff.teamDiffs.length && !diff.playerDiffs.length) {
@@ -448,6 +509,7 @@ function archiveArtifacts(finishedAt) {
   } catch (error) {
     console.error(`[scheduler] failed to archive simulation snapshot: ${error.message}`);
   }
+  pruneSnapshots(simulationHistoryDir, MAX_SIM_HISTORY, "simulation");
 
   if (!currentWeek || !season) {
     return null;
@@ -482,9 +544,37 @@ function archiveArtifacts(finishedAt) {
   } catch (error) {
     console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
   }
+  pruneSnapshots(scoreboardHistoryDir, MAX_SCORE_HISTORY, "scoreboard");
+
+  let previousSnapshot = lastScoreSnapshot;
+  if (!previousSnapshot) {
+    try {
+      const historyFiles = fs
+        .readdirSync(scoreboardHistoryDir)
+        .map((name) => ({
+          name,
+          fullPath: path.join(scoreboardHistoryDir, name),
+        }))
+        .filter((entry) => fs.statSync(entry.fullPath).isFile())
+        .sort((a, b) => a.name.localeCompare(b.name));
+      if (historyFiles.length >= 2) {
+        const prior = historyFiles[historyFiles.length - 2];
+        previousSnapshot = loadScoreSnapshot(prior.fullPath, currentWeek);
+      }
+    } catch (error) {
+      console.error(`[scheduler] failed to inspect scoreboard history: ${error.message}`);
+    }
+  }
 
   const snapshot = loadScoreSnapshot(scoreboardPath, currentWeek);
-  const summary = summarizeDiff(finishedAt, season, currentWeek, teamIndex, snapshot);
+  const summary = summarizeDiff(
+    finishedAt,
+    season,
+    currentWeek,
+    teamIndex,
+    snapshot,
+    previousSnapshot,
+  );
   return summary;
 }
 

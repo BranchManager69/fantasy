@@ -12,6 +12,7 @@ import {
 import { RefreshControls } from "@/components/refresh-controls";
 import { ScenarioDrawer } from "@/components/scenario-drawer";
 import { ScenarioSwitcher } from "@/components/scenario-switcher";
+import { LiveActivityFeed } from "@/components/live-activity-feed";
 import {
   type MonteCarloSummary,
   type MonteCarloTeamSummary,
@@ -418,6 +419,8 @@ export default async function Home({
           scenarios={scenarios}
           activeScenarioId={activeScenarioId}
         />
+
+        <LiveActivityFeed scenarioId={activeScenarioId} />
 
         {highlightCards.length > 0 ? (
           <section className="league-summary">
