@@ -1,6 +1,6 @@
 {
   "name": "fantasy-tools",
-  "version": "0.2.0",
+  "version": "0.1.9",
   "private": true,
   "scripts": {
     "refresh-all": "poetry run fantasy refresh-all",
