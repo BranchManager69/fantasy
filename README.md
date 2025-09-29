@@ -115,9 +115,10 @@ The Next.js refresh button calls the `/api/sim/rest-of-season/trigger` route. Be
 - **Overrides** – drop a `config/refresh-overrides.json` (example: `config/refresh-overrides.sample.json`) to add or tweak windows for holiday games. Each entry accepts `{ "start": "HH:MM", "end": "HH:MM", "intervalMinutes": 1, "label": "thanksgiving" }`.
 - **PM2 integration** – run it alongside the web app:
   ```bash
-  pm2 start npm --name fantasy-refresh --cwd /home/branchmanager/tools/fantasy -- run refresh-scheduler
+  pm2 start npm --name fantasy --cwd /home/branchmanager/tools/fantasy -- run refresh-scheduler
   ```
   Environment knobs include `FANTASY_REFRESH_API_BASE` (default `http://127.0.0.1:40435`), `FANTASY_REFRESH_GAME_INTERVAL_MINUTES`, and `FANTASY_REFRESH_IDLE_INTERVAL_MINUTES`.
+- **Diff history** – each successful run snapshots artifacts under `data/history/` and appends a JSON line to `data/history/refresh-diff.log`, capturing team totals and top player swings between runs.
 
 ---
 

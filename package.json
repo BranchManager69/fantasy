@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "refresh-all": "poetry run fantasy refresh-all",
-    "refresh-scheduler": "node scripts/refresh-scheduler.js"
+    "refresh-scheduler": "node scripts/refresh-scheduler.js",
+    "refresh-last-diff": "node scripts/show-latest-diff.js"
   }
 }
