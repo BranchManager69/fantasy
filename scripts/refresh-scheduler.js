@@ -28,6 +28,39 @@ const MAX_DIFF_LOG_LINES = Number(process.env.FANTASY_REFRESH_MAX_DIFF_LOG_LINES
 
 const WEEKDAY_MAP = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
+const LINEUP_SLOT_NAMES = new Map([
+  [0, "QB"],
+  [1, "TQB"],
+  [2, "RB"],
+  [3, "RB/WR"],
+  [4, "WR"],
+  [5, "WR/TE"],
+  [6, "TE"],
+  [7, "OP"],
+  [8, "DT"],
+  [9, "DE"],
+  [10, "LB"],
+  [11, "DL"],
+  [12, "CB"],
+  [13, "S"],
+  [14, "DB"],
+  [15, "DP"],
+  [16, "D/ST"],
+  [17, "K"],
+  [18, "P"],
+  [19, "HC"],
+  [20, "BE"],
+  [21, "IR"],
+  [22, "FLEX"],
+  [23, "FLEX"],
+  [24, "Rookie"],
+  [25, "Taxi"],
+  [26, "ER"],
+  [27, "Rookie Bench"],
+]);
+
+const NON_SCORING_LINEUP_SLOT_IDS = new Set([20, 21, 24, 25, 26, 27]);
+
 const hm = (hours, minutes) => hours * 60 + minutes;
 
 function parseTime(value) {
@@ -233,39 +266,53 @@ function splitCsv(line) {
   return cells;
 }
 
-function loadScoreSnapshot(csvPath, week) {
-  const raw = fs.readFileSync(csvPath, "utf8");
-  const lines = raw
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (lines.length === 0) {
+function toLineupSlot(slotId) {
+  if (slotId == null || Number.isNaN(slotId)) {
+    return "";
+  }
+  return LINEUP_SLOT_NAMES.get(Number(slotId)) || String(slotId);
+}
+
+function parseCountsForScore(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (value == null) {
+    return false;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  const lowered = String(value).trim().toLowerCase();
+  if (lowered === "true" || lowered === "1" || lowered === "yes" || lowered === "y") {
+    return true;
+  }
+  if (lowered === "false" || lowered === "0" || lowered === "no" || lowered === "n") {
+    return false;
+  }
+  return Boolean(value);
+}
+
+function buildSnapshotFromRows(rows, week) {
+  if (!Array.isArray(rows) || rows.length === 0) {
     return { week, teamTotals: new Map(), playerScores: new Map() };
   }
-  const header = splitCsv(lines.shift());
-  const teamIdx = header.indexOf("team_id");
-  const scoreIdx = header.indexOf("score_total");
-  const countsIdx = header.indexOf("counts_for_score");
-  const playerIdIdx = header.indexOf("espn_player_id");
-  const playerNameIdx = header.indexOf("player_name");
-  const slotIdx = header.indexOf("lineup_slot");
 
   const teamTotals = new Map();
   const playerScores = new Map();
 
-  for (const line of lines) {
-    const cols = splitCsv(line);
-    const teamIdRaw = cols[teamIdx];
-    const countsForScore = (cols[countsIdx] || "").toLowerCase() === "true";
-    const score = Number.parseFloat(cols[scoreIdx] || "0");
-    const playerId = cols[playerIdIdx] || "unknown";
-    const playerName = cols[playerNameIdx] || "";
-    const slot = cols[slotIdx] || "";
-    const teamId = Number.parseInt(teamIdRaw || "0", 10);
-
+  for (const row of rows) {
+    if (!row) continue;
+    const teamId = Number.parseInt(row.teamId ?? row.team_id ?? 0, 10);
     if (Number.isNaN(teamId)) {
       continue;
     }
+
+    const score = Number.parseFloat(row.score ?? row.score_total ?? 0) || 0;
+    const countsForScore = parseCountsForScore(row.countsForScore ?? row.counts_for_score);
+    const keyPlayerId = row.playerKey || row.playerId || row.espn_player_id || row.player_id || "unknown";
+    const playerName = row.playerName || row.player_name || "";
+    const lineupSlot = row.lineupSlot || row.lineup_slot || "";
 
     const existing = teamTotals.get(teamId) || { total: 0, counted: 0 };
     if (countsForScore) {
@@ -274,18 +321,186 @@ function loadScoreSnapshot(csvPath, week) {
     }
     teamTotals.set(teamId, existing);
 
-    const key = `${teamId}::${playerId}::${slot}`;
+    const key = `${teamId}::${keyPlayerId}::${lineupSlot}`;
     playerScores.set(key, {
       teamId,
-      playerId,
+      playerId: keyPlayerId,
       playerName,
-      lineupSlot: slot,
+      lineupSlot,
       score: Number.isFinite(score) ? score : 0,
       countsForScore,
     });
   }
 
   return { week, teamTotals, playerScores };
+}
+
+function loadScoreSnapshotFromCsv(csvPath, week) {
+  const raw = fs.readFileSync(csvPath, "utf8");
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) {
+    return { week, teamTotals: new Map(), playerScores: new Map() };
+  }
+
+  const header = splitCsv(lines.shift());
+  const teamIdx = header.indexOf("team_id");
+  const scoreIdx = header.indexOf("score_total");
+  const countsIdx = header.indexOf("counts_for_score");
+  const playerIdIdx = header.indexOf("espn_player_id");
+  const playerNameIdx = header.indexOf("player_name");
+  const slotIdx = header.indexOf("lineup_slot");
+
+  const rows = [];
+  for (const line of lines) {
+    const cols = splitCsv(line);
+    rows.push({
+      teamId: cols[teamIdx],
+      score: cols[scoreIdx],
+      countsForScore: (cols[countsIdx] || "").toLowerCase() === "true",
+      playerId: cols[playerIdIdx] || "unknown",
+      playerName: cols[playerNameIdx] || "",
+      lineupSlot: cols[slotIdx] || "",
+    });
+  }
+
+  return buildSnapshotFromRows(rows, week);
+}
+
+function loadRosterSlotMap(season, week) {
+  const rosterPath = path.resolve(
+    process.cwd(),
+    "data",
+    "raw",
+    "espn",
+    String(season),
+    `view-mRoster-week-${week}.json`,
+  );
+
+  if (!fs.existsSync(rosterPath)) {
+    return new Map();
+  }
+
+  try {
+    const payload = JSON.parse(fs.readFileSync(rosterPath, "utf8"));
+    const map = new Map();
+    for (const team of payload?.teams || []) {
+      const teamId = team?.id;
+      if (teamId == null) continue;
+      const entries = team?.roster?.entries || [];
+      for (const entry of entries) {
+        const slotId = entry?.lineupSlotId;
+        const poolEntry = entry?.playerPoolEntry || {};
+        const player = poolEntry.player || {};
+        const rawPlayerId = poolEntry.id ?? player.id;
+        if (rawPlayerId == null) continue;
+        const key = `${teamId}::${rawPlayerId}`;
+        map.set(key, {
+          slotId: slotId != null ? Number(slotId) : null,
+          playerName: player.fullName || player.lastName || "Unknown",
+          countsForScore:
+            slotId == null ? true : !NON_SCORING_LINEUP_SLOT_IDS.has(Number(slotId)),
+        });
+      }
+    }
+    return map;
+  } catch (error) {
+    console.error(`[scheduler] failed to parse roster snapshot ${rosterPath}: ${error.message}`);
+    return new Map();
+  }
+}
+
+function loadScoreboardJsonSnapshot(jsonPath, week, season) {
+  const raw = fs.readFileSync(jsonPath, "utf8");
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (error) {
+    console.error(`[scheduler] failed to parse scoreboard JSON ${jsonPath}: ${error.message}`);
+    return { week, teamTotals: new Map(), playerScores: new Map() };
+  }
+
+  const schedule = Array.isArray(data?.schedule) ? data.schedule : [];
+  const rows = [];
+  let fallbackCounter = 0;
+  const rosterMap = loadRosterSlotMap(season, week);
+  const seenPlayers = new Set();
+
+  for (const matchup of schedule) {
+    if (!matchup || (matchup.matchupPeriodId != null && matchup.matchupPeriodId !== week)) {
+      continue;
+    }
+    for (const side of ["home", "away"]) {
+      const teamPayload = matchup[side];
+      const teamId = teamPayload?.teamId;
+      if (teamId == null) continue;
+
+      const rosterEntries = teamPayload?.rosterForMatchupPeriod?.entries || [];
+      for (const entry of rosterEntries) {
+        const slotId = entry?.lineupSlotId;
+        const poolEntry = entry?.playerPoolEntry || {};
+        const player = poolEntry.player || {};
+        const rawPlayerId = poolEntry.id ?? player.id;
+        const numericPlayerId = rawPlayerId != null ? Number(rawPlayerId) : null;
+        const playerId = numericPlayerId != null ? String(numericPlayerId) : `unknown-${teamId}-${fallbackCounter++}`;
+        const rosterKey = numericPlayerId != null ? `${teamId}::${numericPlayerId}` : null;
+        const rosterInfo = rosterKey ? rosterMap.get(rosterKey) : null;
+        const playerName = rosterInfo?.playerName || player.fullName || player.lastName || "Unknown";
+
+        let score = poolEntry.appliedStatTotal;
+        if (score == null) {
+          score = entry?.totalPointsLive ?? entry?.totalPoints ?? 0;
+        }
+        const numericScore = Number.parseFloat(score) || 0;
+        const resolvedSlotId = rosterInfo?.slotId ?? (slotId != null ? Number(slotId) : null);
+        const countsForScore = rosterInfo?.countsForScore ?? (resolvedSlotId == null
+          ? true
+          : !NON_SCORING_LINEUP_SLOT_IDS.has(resolvedSlotId));
+
+        rows.push({
+          teamId,
+          playerId,
+          playerName,
+          lineupSlot: toLineupSlot(resolvedSlotId),
+          score: numericScore,
+          countsForScore,
+        });
+        if (rosterKey) {
+          seenPlayers.add(rosterKey);
+        }
+      }
+    }
+  }
+
+  if (rosterMap.size) {
+    for (const [key, info] of rosterMap.entries()) {
+      if (seenPlayers.has(key)) {
+        continue;
+      }
+      const [teamIdRaw, playerIdRaw] = key.split("::");
+      const teamId = Number.parseInt(teamIdRaw, 10);
+      if (Number.isNaN(teamId)) continue;
+      rows.push({
+        teamId,
+        playerId: playerIdRaw,
+        playerName: info.playerName,
+        lineupSlot: toLineupSlot(info.slotId),
+        score: 0,
+        countsForScore: parseCountsForScore(info.countsForScore),
+      });
+    }
+  }
+
+  return buildSnapshotFromRows(rows, week);
+}
+
+function loadScoreSnapshot(filePath, week, season) {
+  if (filePath.endsWith(".json")) {
+    return loadScoreboardJsonSnapshot(filePath, week, season);
+  }
+  return loadScoreSnapshotFromCsv(filePath, week);
 }
 
 function diffScoreSnapshots(previous, current, teamIndex) {
@@ -515,7 +730,21 @@ function archiveArtifacts(finishedAt) {
     return null;
   }
 
-  const scoreboardPath = path.resolve(
+  const scoreboardHistoryDir = path.join(
+    HISTORY_ROOT,
+    "weekly_scores",
+    `${season}_week_${currentWeek}`,
+  );
+  ensureDir(scoreboardHistoryDir);
+  const scoreboardJsonPath = path.resolve(
+    process.cwd(),
+    "data",
+    "raw",
+    "espn",
+    String(season),
+    `view-mScoreboard-week-${currentWeek}.json`,
+  );
+  const scoreboardCsvPath = path.resolve(
     process.cwd(),
     "data",
     "out",
@@ -524,26 +753,35 @@ function archiveArtifacts(finishedAt) {
     `weekly_scores_${season}_week_${currentWeek}.csv`,
   );
 
-  if (!fs.existsSync(scoreboardPath)) {
+  let snapshotSourcePath = null;
+
+  if (fs.existsSync(scoreboardJsonPath)) {
+    snapshotSourcePath = scoreboardJsonPath;
+    const historyPath = path.join(
+      scoreboardHistoryDir,
+      `scoreboard_week_${currentWeek}__${stamp}.json`,
+    );
+    try {
+      fs.copyFileSync(scoreboardJsonPath, historyPath);
+    } catch (error) {
+      console.error(`[scheduler] failed to archive scoreboard JSON: ${error.message}`);
+    }
+  } else if (fs.existsSync(scoreboardCsvPath)) {
+    snapshotSourcePath = scoreboardCsvPath;
+    const historyPath = path.join(
+      scoreboardHistoryDir,
+      `weekly_scores_${season}_week_${currentWeek}__${stamp}.csv`,
+    );
+    try {
+      fs.copyFileSync(scoreboardCsvPath, historyPath);
+    } catch (error) {
+      console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
+    }
+  } else {
     console.warn(`[scheduler] scoreboard artifact missing for week ${currentWeek}`);
     return null;
   }
 
-  const scoreboardHistoryDir = path.join(
-    HISTORY_ROOT,
-    "weekly_scores",
-    `${season}_week_${currentWeek}`,
-  );
-  ensureDir(scoreboardHistoryDir);
-  const scoreboardHistoryPath = path.join(
-    scoreboardHistoryDir,
-    `weekly_scores_${season}_week_${currentWeek}__${stamp}.csv`,
-  );
-  try {
-    fs.copyFileSync(scoreboardPath, scoreboardHistoryPath);
-  } catch (error) {
-    console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
-  }
   pruneSnapshots(scoreboardHistoryDir, MAX_SCORE_HISTORY, "scoreboard");
 
   let previousSnapshot = lastScoreSnapshot;
@@ -551,22 +789,23 @@ function archiveArtifacts(finishedAt) {
     try {
       const historyFiles = fs
         .readdirSync(scoreboardHistoryDir)
-        .map((name) => ({
-          name,
-          fullPath: path.join(scoreboardHistoryDir, name),
-        }))
-        .filter((entry) => fs.statSync(entry.fullPath).isFile())
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .map((name) => {
+          const fullPath = path.join(scoreboardHistoryDir, name);
+          const stats = fs.statSync(fullPath);
+          return { name, fullPath, stats };
+        })
+        .filter((entry) => entry.stats.isFile())
+        .sort((a, b) => a.stats.mtimeMs - b.stats.mtimeMs);
       if (historyFiles.length >= 2) {
         const prior = historyFiles[historyFiles.length - 2];
-        previousSnapshot = loadScoreSnapshot(prior.fullPath, currentWeek);
+        previousSnapshot = loadScoreSnapshot(prior.fullPath, currentWeek, season);
       }
     } catch (error) {
       console.error(`[scheduler] failed to inspect scoreboard history: ${error.message}`);
     }
   }
 
-  const snapshot = loadScoreSnapshot(scoreboardPath, currentWeek);
+  const snapshot = loadScoreSnapshot(snapshotSourcePath, currentWeek, season);
   const summary = summarizeDiff(
     finishedAt,
     season,
