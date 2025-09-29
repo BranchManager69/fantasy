@@ -4,27 +4,76 @@ const { setTimeout: sleep } = require("node:timers/promises");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const API_BASE = process.env.FANTASY_REFRESH_API_BASE || "http://127.0.0.1:40435";
-const SCENARIO = process.env.FANTASY_REFRESH_SCENARIO || "baseline";
+// Lightweight .env loader (no dependency) so scheduler picks up repo .env if present
+(function loadDotEnvIfPresent() {
+  try {
+    const dotenvPath = path.resolve(process.cwd(), ".env");
+    if (!fs.existsSync(dotenvPath)) return;
+    const raw = fs.readFileSync(dotenvPath, "utf8");
+    const lines = raw.split(/\r?\n/);
+    for (const line of lines) {
+      if (!line || /^\s*#/.test(line)) continue;
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!m) continue;
+      const key = m[1];
+      let val = m[2];
+      // Strip surrounding quotes
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (process.env[key] === undefined) {
+        process.env[key] = val;
+      }
+    }
+  } catch {
+    // ignore dotenv errors; env vars remain as provided by the process
+  }
+})();
+
+let API_BASE = process.env.FANTASY_REFRESH_API_BASE || "http://127.0.0.1:40435";
+let SCENARIO = process.env.FANTASY_REFRESH_SCENARIO || "baseline";
 const STATUS_ENDPOINT = `${API_BASE}/api/sim/rest-of-season/status?scenario=${encodeURIComponent(SCENARIO)}`;
 const TRIGGER_ENDPOINT = `${API_BASE}/api/sim/rest-of-season/trigger?scenario=${encodeURIComponent(SCENARIO)}`;
 
-const HISTORY_ROOT = process.env.FANTASY_REFRESH_HISTORY_ROOT
+let HISTORY_ROOT = process.env.FANTASY_REFRESH_HISTORY_ROOT
   ? path.resolve(process.cwd(), process.env.FANTASY_REFRESH_HISTORY_ROOT)
   : path.resolve(process.cwd(), "data", "history");
 const DIFF_LOG_PATH = path.join(HISTORY_ROOT, "refresh-diff.log");
 
-const DEFAULT_IDLE_INTERVAL_MINUTES = Number(process.env.FANTASY_REFRESH_IDLE_INTERVAL_MINUTES || 15);
-const GAME_INTERVAL_MINUTES = Number(process.env.FANTASY_REFRESH_GAME_INTERVAL_MINUTES || 1);
-const CHECK_FREQUENCY_SECONDS = Number(process.env.FANTASY_REFRESH_CHECK_SECONDS || 30);
-const REQUEST_TIMEOUT_MS = Number(process.env.FANTASY_REFRESH_REQUEST_TIMEOUT_MS || 20000);
+let DEFAULT_IDLE_INTERVAL_MINUTES = Number(process.env.FANTASY_REFRESH_IDLE_INTERVAL_MINUTES || 15);
+let GAME_INTERVAL_MINUTES = Number(process.env.FANTASY_REFRESH_GAME_INTERVAL_MINUTES || 1);
+let CHECK_FREQUENCY_SECONDS = Number(process.env.FANTASY_REFRESH_CHECK_SECONDS || 30);
+let REQUEST_TIMEOUT_MS = Number(process.env.FANTASY_REFRESH_REQUEST_TIMEOUT_MS || 20000);
 const OVERRIDES_PATH = process.env.FANTASY_REFRESH_OVERRIDE_PATH
   ? path.resolve(process.cwd(), process.env.FANTASY_REFRESH_OVERRIDE_PATH)
   : path.resolve(process.cwd(), "config", "refresh-overrides.json");
 
-const MAX_SIM_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SIM_HISTORY || 48);
-const MAX_SCORE_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SCORE_HISTORY || 96);
-const MAX_DIFF_LOG_LINES = Number(process.env.FANTASY_REFRESH_MAX_DIFF_LOG_LINES || 2000);
+let MAX_SIM_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SIM_HISTORY || 48);
+let MAX_SCORE_HISTORY = Number(process.env.FANTASY_REFRESH_MAX_SCORE_HISTORY || 96);
+let MAX_DIFF_LOG_LINES = Number(process.env.FANTASY_REFRESH_MAX_DIFF_LOG_LINES || 2000);
+
+// Optional JSON config overrides (preferred for multi-tenant setups)
+(function loadRefreshConfig() {
+  try {
+    const cfgPath = path.resolve(process.cwd(), "config", "refresh-config.json");
+    if (!fs.existsSync(cfgPath)) return;
+    const raw = JSON.parse(fs.readFileSync(cfgPath, "utf8")) || {};
+    const num = (v, def) => (typeof v === "number" && Number.isFinite(v) ? v : def);
+    GAME_INTERVAL_MINUTES = num(raw.gameIntervalMinutes, GAME_INTERVAL_MINUTES);
+    DEFAULT_IDLE_INTERVAL_MINUTES = num(raw.idleIntervalMinutes, DEFAULT_IDLE_INTERVAL_MINUTES);
+    CHECK_FREQUENCY_SECONDS = num(raw.checkSeconds, CHECK_FREQUENCY_SECONDS);
+    REQUEST_TIMEOUT_MS = num(raw.requestTimeoutMs, REQUEST_TIMEOUT_MS);
+    MAX_SIM_HISTORY = num(raw.maxSimHistory, MAX_SIM_HISTORY);
+    MAX_SCORE_HISTORY = num(raw.maxScoreHistory, MAX_SCORE_HISTORY);
+    MAX_DIFF_LOG_LINES = num(raw.maxDiffLogLines, MAX_DIFF_LOG_LINES);
+    if (typeof raw.apiBase === "string" && raw.apiBase.trim()) API_BASE = raw.apiBase.trim();
+    if (typeof raw.scenario === "string" && raw.scenario.trim()) SCENARIO = raw.scenario.trim();
+    if (typeof raw.historyRoot === "string" && raw.historyRoot.trim())
+      HISTORY_ROOT = path.resolve(process.cwd(), raw.historyRoot.trim());
+  } catch (error) {
+    console.error(`[scheduler] failed to parse refresh-config.json: ${error.message}`);
+  }
+})();
 
 const WEEKDAY_MAP = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
@@ -645,7 +694,7 @@ function summarizeDiff(
       headlineTeams: [],
       headlinePlayers: [],
     };
-    appendDiffLog(summary);
+    // Skip writing no-change entries to extend replay window
     return summary;
   }
 
@@ -715,17 +764,6 @@ function archiveArtifacts(finishedAt) {
     : [];
   const currentWeek = completedWeeks.length ? Math.max(...completedWeeks) : null;
 
-  const stamp = sanitizeTimestamp(finishedAt);
-  const simulationHistoryDir = path.join(HISTORY_ROOT, "simulations", String(season));
-  ensureDir(simulationHistoryDir);
-  const simulationHistoryPath = path.join(simulationHistoryDir, `rest_of_season__${stamp}.json`);
-  try {
-    fs.copyFileSync(baselinePath, simulationHistoryPath);
-  } catch (error) {
-    console.error(`[scheduler] failed to archive simulation snapshot: ${error.message}`);
-  }
-  pruneSnapshots(simulationHistoryDir, MAX_SIM_HISTORY, "simulation");
-
   if (!currentWeek || !season) {
     return null;
   }
@@ -752,37 +790,16 @@ function archiveArtifacts(finishedAt) {
     String(season),
     `weekly_scores_${season}_week_${currentWeek}.csv`,
   );
-
+  // Choose the live snapshot source, but hold off on archiving until we know changes occurred
   let snapshotSourcePath = null;
-
   if (fs.existsSync(scoreboardJsonPath)) {
     snapshotSourcePath = scoreboardJsonPath;
-    const historyPath = path.join(
-      scoreboardHistoryDir,
-      `scoreboard_week_${currentWeek}__${stamp}.json`,
-    );
-    try {
-      fs.copyFileSync(scoreboardJsonPath, historyPath);
-    } catch (error) {
-      console.error(`[scheduler] failed to archive scoreboard JSON: ${error.message}`);
-    }
   } else if (fs.existsSync(scoreboardCsvPath)) {
     snapshotSourcePath = scoreboardCsvPath;
-    const historyPath = path.join(
-      scoreboardHistoryDir,
-      `weekly_scores_${season}_week_${currentWeek}__${stamp}.csv`,
-    );
-    try {
-      fs.copyFileSync(scoreboardCsvPath, historyPath);
-    } catch (error) {
-      console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
-    }
   } else {
     console.warn(`[scheduler] scoreboard artifact missing for week ${currentWeek}`);
     return null;
   }
-
-  pruneSnapshots(scoreboardHistoryDir, MAX_SCORE_HISTORY, "scoreboard");
 
   let previousSnapshot = lastScoreSnapshot;
   if (!previousSnapshot) {
@@ -814,6 +831,46 @@ function archiveArtifacts(finishedAt) {
     snapshot,
     previousSnapshot,
   );
+  const hasChanges = Boolean(
+    (summary?.teamDiffs && summary.teamDiffs.length) || (summary?.playerDiffs && summary.playerDiffs.length),
+  );
+
+  // Only archive when we actually observed changes to reduce churn
+  const stamp = sanitizeTimestamp(finishedAt);
+  if (hasChanges) {
+    // Archive simulation baseline
+    const simulationHistoryDir = path.join(HISTORY_ROOT, "simulations", String(season));
+    ensureDir(simulationHistoryDir);
+    const simulationHistoryPath = path.join(simulationHistoryDir, `rest_of_season__${stamp}.json`);
+    try {
+      fs.copyFileSync(baselinePath, simulationHistoryPath);
+    } catch (error) {
+      console.error(`[scheduler] failed to archive simulation snapshot: ${error.message}`);
+    }
+    pruneSnapshots(simulationHistoryDir, MAX_SIM_HISTORY, "simulation");
+
+    // Archive scoreboard snapshot
+    const scoreboardHistoryDirFinal = scoreboardHistoryDir; // alias for clarity
+    try {
+      if (snapshotSourcePath === scoreboardJsonPath) {
+        const historyPath = path.join(
+          scoreboardHistoryDirFinal,
+          `scoreboard_week_${currentWeek}__${stamp}.json`,
+        );
+        fs.copyFileSync(scoreboardJsonPath, historyPath);
+      } else if (snapshotSourcePath === scoreboardCsvPath) {
+        const historyPath = path.join(
+          scoreboardHistoryDirFinal,
+          `weekly_scores_${season}_week_${currentWeek}__${stamp}.csv`,
+        );
+        fs.copyFileSync(scoreboardCsvPath, historyPath);
+      }
+    } catch (error) {
+      console.error(`[scheduler] failed to archive scoreboard snapshot: ${error.message}`);
+    }
+    pruneSnapshots(scoreboardHistoryDirFinal, MAX_SCORE_HISTORY, "scoreboard");
+  }
+
   return summary;
 }
 

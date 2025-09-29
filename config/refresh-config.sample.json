@@ -1,0 +1,13 @@
+{
+  "apiBase": "http://127.0.0.1:40435",
+  "scenario": "baseline",
+  "gameIntervalMinutes": 1,
+  "idleIntervalMinutes": 60,
+  "checkSeconds": 30,
+  "requestTimeoutMs": 20000,
+  "maxSimHistory": 240,
+  "maxScoreHistory": 360,
+  "maxDiffLogLines": 50000,
+  "historyRoot": "data/history"
+}
+

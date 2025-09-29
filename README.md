@@ -66,7 +66,7 @@
    ```
 3. Copy and configure the environment file (ESPN league + auth details):
    ```bash
-   cp .env.example .env
+  cp config/env.example .env
    # fill in league_id, espn_s2, swid, etc.
    ```
 4. (Optional) install frontend deps for development:
@@ -108,10 +108,14 @@ The Next.js refresh button calls the `/api/sim/rest-of-season/trigger` route. Be
 
 ### Automatic refresh scheduler
 
-- **Game-time updates** – Automatically refreshes during NFL broadcast windows (Thu/Sun/Mon evenings) every minute, with 15-minute intervals otherwise
+- **Game-time updates** – Automatically refreshes during NFL broadcast windows (Thu/Sun/Mon evenings) every minute (`FANTASY_REFRESH_GAME_INTERVAL_MINUTES`), with 60-minute intervals off-hours (`FANTASY_REFRESH_IDLE_INTERVAL_MINUTES`)
 - **Custom schedules** – Add `config/refresh-overrides.json` for holiday games or special events
 - **Background service** – Run `npm run refresh-scheduler` to enable automatic updates
-- **Change tracking** – Use `npm run refresh-last-diff` to see what changed in the latest update
+- **Change tracking** – Uses a diff log to summarize stat swings; see `npm run refresh-last-diff`
+- **Retention tuning** – To preserve longer replays, set:
+  - `FANTASY_REFRESH_MAX_SCORE_HISTORY=360` (≈6 hours of per-minute snapshots)
+  - `FANTASY_REFRESH_MAX_SIM_HISTORY=240`
+  - `FANTASY_REFRESH_MAX_DIFF_LOG_LINES=50000` (or 0 to keep all)
 
 ---
 
