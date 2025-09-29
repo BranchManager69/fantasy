@@ -16,7 +16,9 @@ const INITIAL_STATUS: SimulationStatusResponse = {
     lastExitCode: null,
     error: null,
     log: [],
+    scenarioId: null,
   },
+  scenario: null,
 };
 
 function describeJob(job: JobSnapshot): string {
@@ -36,19 +38,22 @@ function describeJob(job: JobSnapshot): string {
 
 type Props = {
   initialGeneratedAt: string | null;
+  scenarioId: string;
 };
 
-export function RefreshControls({ initialGeneratedAt }: Props) {
+export function RefreshControls({ initialGeneratedAt, scenarioId }: Props) {
   const [status, setStatus] = useState<SimulationStatusResponse>({
     ...INITIAL_STATUS,
     datasetGeneratedAt: initialGeneratedAt,
+    job: { ...INITIAL_STATUS.job, scenarioId },
   });
   const [isTriggering, setIsTriggering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
-      const response = await fetch("/api/sim/rest-of-season/status", { cache: "no-store" });
+      const query = scenarioId ? `?scenario=${encodeURIComponent(scenarioId)}` : "";
+      const response = await fetch(`/api/sim/rest-of-season/status${query}`, { cache: "no-store" });
       if (!response.ok) {
         throw new Error(`Status request failed (${response.status})`);
       }
@@ -58,7 +63,7 @@ export function RefreshControls({ initialGeneratedAt }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to fetch refresh status");
     }
-  }, []);
+  }, [scenarioId]);
 
   useEffect(() => {
     fetchStatus();
@@ -71,7 +76,8 @@ export function RefreshControls({ initialGeneratedAt }: Props) {
     setIsTriggering(true);
     setError(null);
     try {
-      const response = await fetch("/api/sim/rest-of-season/trigger", { method: "POST" });
+      const query = scenarioId ? `?scenario=${encodeURIComponent(scenarioId)}` : "";
+      const response = await fetch(`/api/sim/rest-of-season/trigger${query}`, { method: "POST" });
       if (response.status === 409) {
         const payload = await response.json().catch(() => ({ error: "Simulation already running." }));
         setError(payload.error ?? "Simulation already running.");
@@ -88,7 +94,7 @@ export function RefreshControls({ initialGeneratedAt }: Props) {
       setIsTriggering(false);
       fetchStatus();
     }
-  }, [fetchStatus, isTriggering]);
+  }, [fetchStatus, isTriggering, scenarioId]);
 
   const lastGeneratedCopy = useMemo(() => {
     if (!status.datasetGeneratedAt) return "Unknown";

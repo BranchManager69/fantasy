@@ -5,6 +5,8 @@ import { getLatestSimulation, loadSimulation } from "@/lib/simulator-data";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const seasonParam = params.get("season");
+  const scenarioParam = params.get("scenario");
+  const scenarioId = scenarioParam && scenarioParam.trim() ? scenarioParam.trim() : undefined;
 
   if (seasonParam) {
     const season = Number(seasonParam);
@@ -15,17 +17,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const dataset = await loadSimulation(season);
+    const dataset = await loadSimulation(season, scenarioId);
     if (!dataset) {
       return NextResponse.json(
-        { error: `No simulation dataset found for season ${season}.` },
+        {
+          error: `No simulation dataset found for season ${season}${scenarioId ? ` (scenario ${scenarioId})` : ""}.`,
+        },
         { status: 404 },
       );
     }
     return NextResponse.json(dataset, { headers: { "cache-control": "no-store" } });
   }
 
-  const latest = await getLatestSimulation();
+  const latest = await getLatestSimulation(scenarioId);
   if (!latest) {
     return NextResponse.json(
       {

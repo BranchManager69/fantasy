@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 import { simulationSeasonDir, simulationsOutRoot } from "@/lib/paths";
+import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
 
 export type SimulationPlayer = {
   espn_player_id: number | null;
@@ -48,6 +49,7 @@ export type SimulationWeekMatchup = SimulationMatchup & {
     home: number;
     away: number;
   };
+  status?: "final" | "in_progress" | "scheduled";
 };
 
 export type SimulationWeek = {
@@ -68,6 +70,7 @@ export type SimulationTeamScheduleEntry = {
   result?: "win" | "loss" | "tie";
   actual_points?: number;
   opponent_actual_points?: number;
+  status?: "final" | "in_progress" | "scheduled";
 };
 
 export type SimulationStanding = {
@@ -116,10 +119,37 @@ export type RestOfSeasonSimulation = {
   sources: {
     projections_weeks: number[];
     completed_weeks?: number[];
+    scenario_id?: string;
   };
   completed_weeks?: number[];
   monte_carlo?: MonteCarloSummary;
+  scenario?: {
+    id: string;
+    label: string;
+    season: number;
+    is_baseline: boolean;
+    overrides?: {
+      completed_weeks: number[];
+      projection_weeks: number[];
+    };
+    description?: string;
+    updated_at?: string;
+  };
 };
+
+const SCENARIO_FILENAME_SAFE = /[^a-z0-9_-]+/g;
+
+function scenarioSlug(id: string): string {
+  const slug = id.toLowerCase().replace(SCENARIO_FILENAME_SAFE, "-").replace(/(^-|-$)+/g, "");
+  return slug || "scenario";
+}
+
+function scenarioFilename(scenarioId?: string): string {
+  if (!scenarioId || scenarioId === BASELINE_SCENARIO_ID) {
+    return "rest_of_season.json";
+  }
+  return `rest_of_season__scenario-${scenarioSlug(scenarioId)}.json`;
+}
 
 async function listSimulationSeasons(): Promise<number[]> {
   const entries = await fs.readdir(simulationsOutRoot, { withFileTypes: true }).catch(() => []);
@@ -140,9 +170,12 @@ async function readSimulationFile(filePath: string): Promise<RestOfSeasonSimulat
   }
 }
 
-export async function loadSimulation(season: number): Promise<RestOfSeasonSimulation | null> {
+export async function loadSimulation(
+  season: number,
+  scenarioId?: string,
+): Promise<RestOfSeasonSimulation | null> {
   const seasonPath = simulationSeasonDir(season);
-  const filePath = path.join(seasonPath, "rest_of_season.json");
+  const filePath = path.join(seasonPath, scenarioFilename(scenarioId));
   try {
     await fs.access(filePath);
   } catch {
@@ -151,10 +184,12 @@ export async function loadSimulation(season: number): Promise<RestOfSeasonSimula
   return readSimulationFile(filePath);
 }
 
-export async function getLatestSimulation(): Promise<RestOfSeasonSimulation | null> {
+export async function getLatestSimulation(
+  scenarioId?: string,
+): Promise<RestOfSeasonSimulation | null> {
   const seasons = await listSimulationSeasons();
   for (const season of seasons) {
-    const dataset = await loadSimulation(season);
+    const dataset = await loadSimulation(season, scenarioId);
     if (dataset) {
       return dataset;
     }
@@ -174,7 +209,7 @@ export type SimulationMatchupWithWeek = SimulationWeekMatchup & { week: number }
 
 export type TeamScheduleWithContext = Omit<
   SimulationTeamScheduleEntry,
-  "is_actual" | "actual_points" | "opponent_actual_points" | "result"
+  "is_actual" | "actual_points" | "opponent_actual_points" | "result" | "status"
 > & {
   opponent: SimulationTeamMeta | null;
   opponentStanding: SimulationStanding | null;
@@ -186,6 +221,7 @@ export type TeamScheduleWithContext = Omit<
   result: "win" | "loss" | "tie" | null;
   actualPoints: number | null;
   opponentActualPoints: number | null;
+  status: "final" | "in_progress" | "scheduled" | "upcoming" | null;
 };
 
 export type TeamContext = {
@@ -266,6 +302,7 @@ export function getTeamSchedule(
       result: rawResult,
       actual_points,
       opponent_actual_points,
+      status,
       ...rest
     } = entry;
     const isActual = Boolean(is_actual);
@@ -274,6 +311,18 @@ export function getTeamSchedule(
     const opponentActualPoints = isActual
       ? opponent_actual_points ?? entry.opponent_projected_points
       : null;
+    const normalizedStatus: "final" | "in_progress" | "scheduled" | "upcoming" | null = (() => {
+      if (typeof status === "string") {
+        const lowered = status.toLowerCase();
+        if (lowered === "final" || lowered === "in_progress" || lowered === "scheduled") {
+          return lowered;
+        }
+      }
+      if (isActual) {
+        return result ? "final" : "in_progress";
+      }
+      return "upcoming";
+    })();
 
     const matchup = context.matchupsById.get(entry.matchup_id) ?? null;
     const opponent = context.teamsById.get(entry.opponent_team_id) ?? null;
@@ -305,6 +354,7 @@ export function getTeamSchedule(
       result,
       actualPoints,
       opponentActualPoints,
+      status: normalizedStatus,
     };
   });
 }

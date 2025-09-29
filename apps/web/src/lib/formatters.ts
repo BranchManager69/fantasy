@@ -10,12 +10,14 @@ export function formatTimestamp(timestamp: string): string {
   if (Number.isNaN(date.getTime())) {
     return "Unknown";
   }
-  return date.toLocaleString("en-US", {
+  return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  });
+    timeZone: "UTC",
+    timeZoneName: "short",
+  }).format(date);
 }
 
 export function formatRecord(record: { wins: number; losses: number; ties: number }): string {
@@ -49,4 +51,12 @@ export function formatFinalMargin(margin: number): string {
   if (Math.abs(margin) < 0.25) return "Tied";
   if (margin > 0) return `Won by ${margin.toFixed(1)}`;
   return `Lost by ${Math.abs(margin).toFixed(1)}`;
+}
+
+export function formatLiveMargin(pointsFor: number | null, pointsAgainst: number | null): string {
+  if (pointsFor === null || pointsAgainst === null) return "";
+  const diff = pointsFor - pointsAgainst;
+  if (Math.abs(diff) < 0.25) return "Currently tied";
+  if (diff > 0) return `Leading by ${diff.toFixed(1)}`;
+  return `Trailing by ${Math.abs(diff).toFixed(1)}`;
 }

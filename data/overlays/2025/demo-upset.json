@@ -1,0 +1,106 @@
+{
+  "scenario_id": "demo-upset",
+  "label": "Buzzsaw Week 1 Upset",
+  "description": "Flips week 1 vs Team 10 and boosts week 5 projection.",
+  "completed_weeks": {
+    "1": {
+      "teams": {
+        "1": {
+          "entries": [
+            {
+              "player_name": "Override Total",
+              "lineup_slot": "QB",
+              "espn_position": "QB",
+              "score_total": 74.2,
+              "counts_for_score": true
+            }
+          ]
+        },
+        "10": {
+          "entries": [
+            {
+              "player_name": "Override Total",
+              "lineup_slot": "QB",
+              "espn_position": "QB",
+              "score_total": 128.5,
+              "counts_for_score": true
+            }
+          ]
+        },
+        "3": {
+          "entries": [
+            {
+              "player_name": "Scenario Override",
+              "lineup_slot": "TOTAL",
+              "espn_position": "",
+              "counts_for_score": true,
+              "scenario_override": true,
+              "score_total": -10.0
+            },
+            {
+              "player_name": "Scenario Loss",
+              "lineup_slot": "QB",
+              "espn_position": "QB",
+              "counts_for_score": true,
+              "score_total": 60.0
+            }
+          ]
+        },
+        "8": {
+          "entries": [
+            {
+              "player_name": "Scenario Override",
+              "lineup_slot": "TOTAL",
+              "espn_position": "",
+              "counts_for_score": true,
+              "scenario_override": true,
+              "score_total": -5.0
+            },
+            {
+              "player_name": "Scenario Win",
+              "lineup_slot": "QB",
+              "espn_position": "QB",
+              "counts_for_score": true,
+              "score_total": 105.0
+            }
+          ]
+        }
+      },
+      "matchups": {
+        "4": {
+          "home_team_id": 1,
+          "away_team_id": 10,
+          "home_points": 74.2,
+          "away_points": 128.5,
+          "winner": "AWAY",
+          "notes": "Demo override"
+        },
+        "3": {
+          "home_points": 50.0,
+          "away_points": 100.0,
+          "home_team_id": 3,
+          "away_team_id": 8,
+          "winner": "AWAY"
+        }
+      }
+    }
+  },
+  "projection_weeks": {
+    "5": {
+      "teams": {
+        "1": {
+          "entries": [
+            {
+              "player_name": "Future Override",
+              "lineup_slot": "QB",
+              "espn_position": "QB",
+              "projected_points": 132.7,
+              "counts_for_score": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "updated_at": "2025-09-28T17:59:13.042105+00:00"
+}

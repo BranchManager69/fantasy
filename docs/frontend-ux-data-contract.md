@@ -1,265 +1,233 @@
-# Fantasy Frontend: UX Architecture & Data Contract
+# Fantasy Data Pipeline & Scenario Contract
 
-## 1. Product North Star
-- **Mission**: turn raw league data into a living, hype-fueled clubhouse for long-running fantasy leagues.
-- **Primary users**: league managers who want weekly context, trash-talk fuel, historical receipts, and AI-driven storylines.
-- **Guiding principles**: always contextual (what matters right now), always personal (tailored to each team), built for shared moments (easy sharing, dramatic visuals), resilient (progressively enhance; graceful with stale data).
+This document describes the data artifacts that power the fantasy dashboard, how the refresh + simulation pipeline populates them, and how scenario overlays layer on top of ESPN exports without mutating your source data.
 
-## 2. Experience Architecture
-### 2.1 Platform & Stack (to confirm)
-- Proposed: web app on Next.js App Router + TypeScript; styling can lean on Tailwind or a design-token-driven system. Confirm this aligns with team preferences.
-- Optional: component workbench (Storybook or Ladle) if we want to iterate on widgets in isolation—call out if that adds too much overhead.
-- Data fetch layer could be React Query or SWR; whichever we pick should wrap typed fetchers that hit API routes reading the CLI outputs.
-- Feature flag hook only if we truly need to hide experimental AI features; otherwise skip.
+---
 
-### 2.2 Navigation Spine (initial concept)
-- `/` **League Home** – narrative hub for the current week.
-- `/teams/[teamId]` **Team Locker Room** – season timeline, roster heat map, media feed.
-- `/matchups/[season]/[week]` **Week View** – live matchups, win-prob graphs, highlight reels.
-- `/history/[season]` **Season Archive** – champion story, records, stat leaderboards.
-- `/control` **Commissioner Console** – scoring knobs, content moderation for AI blurbs.
+## 1. Baseline Artifacts
 
-If we stay on Next App Router, this can map to nested layouts such as:
-- `app/layout.tsx`: global shell (theme, ticker, etc.).
-- `app/(public)/layout.tsx`: optional marketing shell.
-- `app/(league)/layout.tsx`: authenticated shell (side rail with managers, notifications).
-Revise once we lock auth requirements.
+Artifacts live under `data/` at the repository root. Files inside `data/raw` and `data/in` are intermediate and gitignored; the UI consumes the normalized outputs inside `data/out` plus any overlays committed in `data/overlays`.
 
-### 2.3 Core Modules (League Home candidates)
-- **Narrative Hero**: rotating headline (e.g., “Team X needs 18.4 from Bijan to stay alive”), win-prob sparkline, actionable CTA.
-- **Live Matchup Strip**: horizontally scrollable cards, real-time score delta, context chips ("bench points left").
-- **Hot Moments Feed**: AI-generated or rule-based blurbs + media when thresholds trigger (needs backend support).
-- **Manager Capsules**: each team card shows record, streak, vibe meter, next opponent, quick trash-talk snippet.
-- **History Rail**: timeline chips linking to unforgettable weeks; shows throwback stats when hovered.
-- **Community Wall**: blended chat, polls, meme submissions; future integration with Slack/Discord bot if desired.
+| Path | Produced by | Purpose |
+|------|-------------|---------|
+| `data/out/espn/<season>/teams.csv` | `fantasy espn normalize` | Canonical team metadata (names, owners, logos, divisions). |
+| `data/out/espn/<season>/schedule.csv` | `fantasy espn normalize` | Schedule with home/away assignments and ESPN matchup IDs. |
+| `data/out/espn/<season>/weekly_scores_<week>.csv` | `fantasy score week` | Finalized fantasy scores per roster slot for completed weeks. |
+| `data/out/espn/<season>/weekly_stats_<week>.csv` | `fantasy score week` | Raw stat lines joined to nflverse IDs; feeds scoring breakdowns. |
+| `data/out/projections/<season>/week_<week>.json` | `fantasy refresh-all` | Projection snapshots used by rest-of-season sims. |
+| `data/out/simulations/<season>/rest_of_season.json` | `fantasy sim rest-of-season` | Baseline simulation payload consumed by the frontend. |
+| `data/out/simulations/<season>/rest_of_season__scenario-<slug>.json` | `fantasy sim rest-of-season --scenario` | Scenario-specific simulator output (same schema as baseline). |
+| `data/overlays/<season>/*.json` | scenario CLI | Overlay definitions (committed). |
 
-### 2.4 Cross-cutting UX Systems
-- **Alerting & Live States**: toast + pinned alerts for breaking news (injury, last-minute lineup change). Use optimistic updates when AI content queued.
-- **Personalization**: allow user preference toggles (favorite team, noise level), stored in local storage & user profile when auth scales.
-- **Accessibility**: color-safe palette for team colors; provide text alternatives for media; ensure keyboard nav works across carousels.
-- **Offline/Stale Data Handling**: show last refreshed timestamp, offer manual refresh, degrade to static copy when API offline.
+> **Tip:** Set `FANTASY_REPO_ROOT` when running the frontend outside the repo so it can locate `data/out` and `data/overlays`.
 
-## 3. Data Contract
-The backend currently emits deterministic CSVs via the Python pipeline. Frontend will consume typed JSON served by Next API routes that wrap those files. Each route follows `GET /api/<domain>` returning versioned payloads. Fields called out explicitly as needing new upstream support are annotated in notes beneath each payload.
+---
 
-### 3.1 Transport Conventions
-- All responses include `metadata` with `season`, `generated_at`, and `source` (e.g., `espn_view`, `nflverse_weekly`).
-- Collections expose `items` arrays; singular resources expose `data`.
-- Identifiers remain numeric where ESPN uses numbers; expose both raw IDs and friendly slugs for routing.
+## 2. Refresh Pipeline
 
-Example envelope:
-```json
+`poetry run fantasy refresh-all` orchestrates the baseline pipeline. Each stage writes deterministic files so reruns can be diffed.
+
+1. **ESPN pull** – Authenticated requests capture the private league views (`view-mSettings`, `view-mRoster`, etc.) into `data/raw/`.
+2. **Normalization** – Views are transformed into tidy CSVs under `data/out/espn/<season>/` (teams, schedule, roster, scoring settings).
+3. **Scoring** – `fantasy score` applies the custom scoring table (`config/scoring.yaml`) to completed weeks, filling the `weekly_scores_*` CSVs.
+4. **Projection sync** – nflverse + FantasyCalc projections hydrate `data/out/projections/<season>/week_<n>.json` for upcoming weeks.
+
+Once the baseline data is refreshed, run `fantasy sim rest-of-season` to aggregate the completed weeks, projections, and Monte Carlo odds into the frontend-ready JSON.
+
+### Simulator Output (baseline + scenarios)
+
+Every simulator JSON shares the same top-level contract:
+
+```jsonc
 {
-  "metadata": {
-    "season": 2024,
-    "generated_at": "2024-08-24T17:32:11Z",
-    "source": "espn_normalize_v1"
+  "season": 2025,
+  "generated_at": "2025-09-28T19:10:30.591918+00:00",
+  "start_week": 5,
+  "end_week": 13,
+  "projection_sigma": 18.0,
+  "teams": [ /* metadata */ ],
+  "schedule": { /* weekly projections and finals */ },
+  "standings": { /* deterministic table */ },
+  "monte_carlo": { /* playoff odds */ },
+  "sources": {
+    "completed_weeks": [1, 2, 3, 4],
+    "projections_weeks": [5, 6, 7, 8, 9, 10, 11, 12, 13],
+    "scenario_id": "baseline"
   },
-  "items": []
-}
-```
-
-### 3.2 Core Domain Entities
-
-#### League
-Source: `view-mSettings.json`
-```json
-{
-  "league_id": 123456,
-  "season": 2024,
-  "name": "The Long Game",
-  "current_week": 11,
-  "total_teams": 12,
-  "playoff_week": 15,
-  "scoring_rules_version": "config/scoring.yaml@1",
-  "logo_url": "https://...",
-  "history_available": [2015, 2016, 2023]
-}
-```
-Notes: Most fields are present in the ESPN view today; confirm availability of `logo_url`.
-
-#### Team
-Source: `teams.csv`
-```json
-{
-  "team_id": 3,
-  "slug": "team-3-the-beasts",
-  "name": "The Beasts",
-  "abbrev": "BST",
-  "owners": ["Chris G"],
-  "division_id": 2,
-  "logo_url": "https://...",
-  "record": { "wins": 7, "losses": 3, "ties": 0 },
-  "streak": { "type": "W", "length": 4 },
-  "playoff_seed": 2,
-  "last_updated": "2024-08-24T17:32:11Z"
-}
-```
-Record/streak derive from schedule dataset; compute in API layer so frontend stays presentation-focused.
-Notes: `slug` can be generated in API layer; confirm `logo_url` fidelity from ESPN assets.
-
-#### Manager Profile
-Synthetic layer combining team ownership + optional social handles.
-```json
-{
-  "manager_id": "mgr_chris_g",
-  "display_name": "Chris G",
-  "team_ids": [3],
-  "tenure": 10,
-  "championships": 2,
-  "chat_handle": "@chris",
-  "avatar_url": "https://..."
-}
-```
-
-#### Matchup
-Source: `schedule.csv`, `weekly_scores_*.csv`
-```json
-{
-  "matchup_id": "2024-11-3v4",
-  "season": 2024,
-  "week": 11,
-  "home_team_id": 3,
-  "away_team_id": 4,
-  "home_score": 112.4,
-  "away_score": 107.8,
-  "winner": "HOME",
-  "kickoff": "2024-11-10T18:00:00Z",
-  "status": "LIVE",
-  "projected_delta": -4.6,
-  "win_probabilities": [
-    { "minute": 0, "home": 0.52 },
-    { "minute": 60, "home": 0.71 }
-  ],
-  "highlights": ["highlight_abc"],
-  "notable_events": ["player_boog"]
-}
-```
-`win_probabilities` and projections come from AI/service layer; initial version can reuse ESPN projections or simple heuristics.
-Notes: `kickoff`, `status`, `projected_delta`, `win_probabilities`, `highlights`, and `notable_events` will need additional sources beyond the current CSV outputs.
-
-#### Roster Entry
-Source: `roster_enriched.csv`
-```json
-{
-  "team_id": 3,
-  "season": 2024,
-  "week": 11,
-  "slot": "RB",
-  "espn_player_id": 15765,
-  "player": {
-    "player_id": "00-00312345",
-    "display_name": "Bijan Robinson",
-    "nfl_team": "ATL",
-    "position": "RB",
-    "injury_status": "ACTIVE"
-  },
-  "lineup_status": "STARTER",
-  "acquisition_type": "DRAFT",
-  "fantasy_points": 18.6,
-  "score_breakdown": {
-    "score_base": 16.6,
-    "score_bonus": 2,
-    "score_position": 0,
-    "counts_for_score": true
+  "scenario": {
+    "id": "baseline",
+    "label": "Baseline",
+    "is_baseline": true,
+    "overrides": {
+      "completed_weeks": [],
+      "projection_weeks": []
+    },
+    "description": "Official ESPN dataset (no overlays)"
   }
 }
 ```
 
-#### Player Stat Line
-Source: `weekly_stats_*.csv` + scoring engine outputs.
-```json
+Scenario runs populate the same structure, with `scenario.id` matching the overlay ID and `sources.scenario_id` reflecting the overlay slug.
+
+---
+
+## 3. Scenario Overlays
+
+Overlays let you explore counterfactuals (different historical outcomes, roster edits, projection tweaks) without altering ESPN source files. They are stored in `data/overlays/<season>/` and merged at sim time.
+
+- **Baseline integrity** – The overlay engine never mutates `data/out/espn`. Clearing `data/overlays` reverts the simulator to raw ESPN data.
+- **Granularity** – Overrides can target full matchup scores, team totals, or individual players (historical scores or future projections).
+- **Stacking rules** – Player-level overrides roll up into team totals. Team `set-score` commands take precedence if both are applied.
+- **Simulation prerequisite** – Editing an overlay does not auto-run the sim. Invoke `fantasy sim rest-of-season --scenario <id>` so the frontend sees the new JSON.
+
+### Overlay JSON Shape
+
+```jsonc
 {
-  "player_id": "00-00312345",
-  "season": 2024,
-  "week": 11,
-  "team_id": 3,
-  "stat_source": "nflverse",
-  "stats": {
-    "passing_yards": 0,
-    "rushing_yards": 92,
-    "receptions": 4,
-    "receiving_yards": 21,
-    "rushing_tds": 1,
-    "fumbles_lost": 0
+  "scenario_id": "demo-upset",
+  "label": "Buzzsaw Week 1 Upset",
+  "description": "Flips week 1 vs Team 10 and boosts week 5 projection.",
+  "season": 2025,
+  "completed_weeks": {
+    "1": {
+      "teams": {
+        "8": {
+          "entries": [
+            {
+              "player_name": "Scenario Win",
+              "lineup_slot": "QB",
+              "espn_player_id": 15847,
+              "score_total": 105.0,
+              "score_base": 80.0,
+              "score_bonus": 25.0,
+              "counts_for_score": true
+            }
+          ]
+        }
+      },
+      "matchups": {
+        "3": {
+          "home_team_id": 3,
+          "away_team_id": 8,
+          "home_points": 50.0,
+          "away_points": 100.0,
+          "winner": "AWAY",
+          "notes": "Demo override"
+        }
+      }
+    }
   },
-  "fantasy_points": 18.6,
-  "fantasy_points_raw": {
-    "espn": 17.9,
-    "custom": 18.6
-  }
-}
-```
-Notes: `fantasy_points_raw.espn` requires storing ESPN-provided fantasy totals alongside custom calculations.
-
-#### Highlight / Moment
-Generated by AI or rules engine; proposed storage `data/out/highlights/<season>/week-<n>.json` (would be a new artifact produced by backend).
-```json
-{
-  "highlight_id": "highlight_abc",
-  "season": 2024,
-  "week": 11,
-  "type": "clutch_td",
-  "title": "Bijan bursts for the dagger",
-  "summary": "With 2:14 left, Bijan's 21-yard TD flipped win probability by 34%.",
-  "media": {
-    "kind": "gif",
-    "url": "https://cdn.fantasy.ai/highlights/abc.gif"
+  "projection_weeks": {
+    "5": {
+      "teams": {
+        "1": {
+          "entries": [
+            {
+              "player_name": "Future Override",
+              "lineup_slot": "QB",
+              "projected_points": 132.7,
+              "counts_for_score": true
+            }
+          ]
+        }
+      }
+    }
   },
-  "associated_matchup_id": "2024-11-3v4",
-  "created_at": "2024-11-10T21:04:00Z"
+  "updated_at": "2025-09-28T17:59:13.042105+00:00"
 }
 ```
 
-#### Insight / Narrative
-```json
-{
-  "insight_id": "insight_hot_hand",
-  "audience": "league",
-  "season": 2024,
-  "week": 11,
-  "headline": "The Beasts pull off four-game heater",
-  "body": "Chris' bench outscored two starters in Week 11, pushing his win streak to four and vaulting him into the #2 seed.",
-  "tags": ["streak", "bench"],
-  "confidence": 0.83,
-  "cta": {
-    "label": "View matchup",
-    "href": "/matchups/2024/11?focus=3"
-  }
-}
+- `scenario_id` must match the filename slug (`demo-upset.json`).
+- `completed_weeks` and `projection_weeks` are dictionaries keyed by week number (string). Missing keys fall back to the baseline dataset.
+- `teams[].entries[]` mirrors the structure in `weekly_scores_*` / projection files. Field names include:
+  - `player_name`, `lineup_slot`, `espn_position`, `espn_player_id`
+  - Historical scoring: `score_total`, `score_base`, `score_bonus`, `score_position`, `counts_for_score`
+  - Projection overrides: `projected_points`
+  - `scenario_override` (bool) flags synthetic rows when no ESPN player is associated.
+- `matchups` ensures team totals and winner alignment. If omitted, totals are recomputed from player entries.
+- `updated_at` is refreshed automatically by the CLI.
+
+---
+
+## 4. Scenario CLI Workflows
+
+The CLI lives under `poetry run fantasy scenario`. Commands validate inputs, update the overlay JSON, and maintain team/matchup totals.
+
+| Command | Description |
+|---------|-------------|
+| `create` | Bootstrap a new overlay file with metadata (season, label, description). |
+| `describe` | Summarize metadata, touched weeks, and counts of overrides. |
+| `diff` | Compare overlay-adjusted results versus the baseline dataset. |
+| `set-score` | Adjust a completed matchup outcome (home/away totals + winner). |
+| `set-player-score` | Override individual player fantasy points for a completed week. |
+| `set-projection` | Override a team-level projected total for a future week. |
+| `set-player-projection` | Override an individual player's projected points. |
+
+### Typical Flow
+
+```bash
+# 1. Create the overlay file
+poetry run fantasy scenario create --season 2025 --id demo-upset --label "Buzzsaw Week 1 Upset"
+
+# 2. Apply overrides
+poetry run fantasy scenario set-player-score --season 2025 --id demo-upset --week 1 \
+  --team 8 --player-name "Patrick Mahomes" --lineup-slot QB --points 45.6
+poetry run fantasy scenario set-score --season 2025 --id demo-upset --week 1 \
+  --home-team 3 --away-team 8 --home 98.4 --away 126.1
+
+# 3. Inspect the delta
+poetry run fantasy scenario diff --season 2025 --id demo-upset
+
+# 4. Regenerate simulator output
+poetry run fantasy sim rest-of-season --season 2025 --scenario demo-upset
+
+The simulator infers `start_week` and `end_week` from the baseline artifacts, keeping the command future-proof as the season advances.
 ```
-`audience` may be `league`, `team:<id>`, or `manager:<id>` for personalization.
-Notes: requires new generation service or rule engine; ensure we capture provenance/confidence alongside content.
 
-### 3.3 Asset Pipeline (proposal)
-- Standardize on canonical IDs: `espn_player_id` (int) and `player_id` (GSIS). API helper `GET /api/assets/player/:id` could return signed CDN URL.
-- Backend could maintain a manifest `data/out/assets/player_manifests.json` mapping IDs to URLs + last fetch timestamp.
-- For missing assets, frontend shows styled placeholder with team colors and initials.
-- Logos: pull from ESPN when available; fallback pack (e.g., `public/logos/<team>.svg`) only if licensing cleared.
+> **Reminder:** Only baseline simulations run automatically when the UI refresh button is pressed. Rerun the simulator manually for each scenario you edit.
 
-### 3.4 Derived Metrics & AI Interfaces (future candidates)
-- `GET /api/insights/recent` could return aggregated insights, sorted by priority.
-- `POST /api/insights/feedback` would let commissioners flag bad AI takes; store audit trail for tuning.
-- `GET /api/matchups/:season/:week/live` could stream SSE/WebSocket for live delta (phase 2).
+---
 
-### 3.5 Versioning & Caching
-- Include `etag` + `cache-control: max-age=30` for near-real-time routes; long-tail history can be `s-maxage=3600` once we prove stability.
-- Version bump when schema changes (`metadata.schema_version`). Coordinate API versioning with CLI artifact versions.
+## 5. Operational Runbook
 
-## 4. Implementation Phases (suggested)
-1. **Scaffold** Next.js app, shared UI kit, and wire API routes that read the CLI-generated artifacts.
-2. **League Home MVP**: hero narrative, matchup strip, manager capsules fed directly by real CSV/JSON outputs.
-3. **Data bridge**: implement API routes reading CLI CSVs, convert to contract shapes, add chosen data-fetch layer.
-4. **Insights engine beta**: integrate rule-based highlights, then swap to AI service if ready.
-5. **History & archives**: backfill seasons, add timeline & records modules.
+### Baseline refresh (daily cadence)
+1. `poetry run fantasy refresh-all --season 2025`
+2. `poetry run fantasy sim rest-of-season --season 2025 --simulations 500`
 
-## 5. Open Questions
-- Authentication: continue without auth (shared secret) or integrate with Cognito/Auth0?
-- Update cadence: will CLI push data on schedule (cron) or does frontend trigger runs on demand?
-- Asset licensing: confirm source & terms for player headshots/logos before automating fetch.
+Both commands auto-detect the current matchup period and projection horizon, so no week parameters are required during the regular cadence. Add `--start-week` / `--end-week` only for historical backfills or what-if reruns.
+3. `npm run build && pm2 restart fantasy-web` (when serving the production build)
 
-## 6. Next Steps for Frontend
-- Approve data contract naming + route scheme.
-- Provide real CLI outputs covering recent matchups so we can validate the transformation layer.
-- Decide on design system baseline (Tailwind vs CSS vars + utility).
-- Once backend agent is ready, pair on Next API route that shells out to CLI or reads freshly generated artifacts.
+> **Automation:** `npm run refresh-scheduler` mirrors the UI button by calling the `/api/sim/rest-of-season/trigger` route. Default cadence is 1 minute during published NFL windows (Thu night, Sun slots, Mon night) and 15 minutes otherwise; customise via `config/refresh-overrides.json` or `FANTASY_REFRESH_*` env vars before wiring the process into PM2.
+
+### Scenario maintenance
+1. Edit overlays via CLI (`set-player-score`, `set-player-projection`, etc.).
+2. `poetry run fantasy sim rest-of-season --season 2025 --scenario <id>` for each updated overlay.
+3. Confirm the UI toggles between baseline and scenario datasets without hydration warnings.
+
+### Troubleshooting
+- **Refresh button shows “Last refresh failed”** – Inspect `apps/web/src/server/sim-job.ts` logs (PM2) for CLI output; rerun the failing command manually.
+- **Hydration mismatch** – Ensure baseline and scenario JSONs include the expected `generated_at`. Regenerate if one is stale.
+- **Missing scenario in UI** – Check `data/overlays/<season>/<id>.json` validity (`poetry run fantasy scenario describe ...`); invalid JSON is skipped.
+
+---
+
+## 6. Frontend Contract
+
+- Scenario metadata comes from `listScenarios` (`apps/web/src/lib/scenario-data.ts`). Any JSON in `data/overlays/<season>/` with a valid `scenario_id` becomes an option.
+- `/api/sim/rest-of-season` reads from `data/out/simulations/<season>/rest_of_season*.json`. Baseline requests fall back to the non-suffixed file; scenario requests look for `rest_of_season__scenario-<slug>.json`.
+- `/api/sim/rest-of-season/status` returns the job log plus the most recent `generated_at`. The frontend compares this to the currently loaded dataset to determine the status banner.
+- The grid renders deterministic values from the simulator JSON: `completed_weeks` results mark games as “Final”, while future weeks display projections and Monte Carlo odds.
+
+Keep the simulator schema backward-compatible; adding fields is safe, but renaming/removing should be accompanied by Next.js updates.
+
+---
+
+## 7. Future Enhancements
+
+- Document CLI helpers for `scenario clone` / `scenario delete` once implemented.
+- Add integration tests around overlay conflict handling (`tests/test_cli_scenario.py`).
+- Extend the UI to surface overlay descriptions and per-player diffs directly in the matchup matrix.
+
+---
+
+Last updated: 2025-09-29 (aligned with scenario overlay rollout).

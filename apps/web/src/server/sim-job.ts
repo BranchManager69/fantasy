@@ -5,6 +5,21 @@ import type { JobSnapshot } from "@/types/sim-status";
 
 const MAX_LOG_LINES = 200;
 const REPO_ROOT = path.resolve(process.cwd(), "../../");
+const BASELINE_SCENARIO_ID = "baseline";
+
+function shellEscape(value: string): string {
+  return `'${value.split("'").join(`'"'"'`)}'`;
+}
+
+function buildSimCommand(scenarioId?: string | null): string {
+// `npm run refresh-all` auto-detects the active matchup period and projection window,
+// so we keep the command free of hard-coded week arguments.
+const baseCommand = "npm run refresh-all && poetry run fantasy sim rest-of-season --simulations 500";
+  if (!scenarioId || scenarioId.toLowerCase() === BASELINE_SCENARIO_ID) {
+    return baseCommand;
+  }
+  return `${baseCommand} --scenario ${shellEscape(scenarioId)}`;
+}
 
 function nowISO(): string {
   return new Date().toISOString();
@@ -18,6 +33,7 @@ class SimulationJobRunner {
     lastExitCode: null,
     error: null,
     log: [],
+    scenarioId: null,
   };
 
   private child: ChildProcess | null = null;
@@ -30,11 +46,15 @@ class SimulationJobRunner {
     return this.state.status === "running";
   }
 
-  start(): JobSnapshot {
+  start(scenarioId?: string | null): JobSnapshot {
     if (this.isRunning) {
       throw new Error("Simulation already running");
     }
 
+    const trimmedScenario = scenarioId?.trim() ?? null;
+    const baseline = !trimmedScenario || trimmedScenario.toLowerCase() === BASELINE_SCENARIO_ID;
+    const scenarioForCommand = baseline ? null : trimmedScenario;
+    const activeScenarioId = baseline ? BASELINE_SCENARIO_ID : trimmedScenario;
     const startedAt = nowISO();
     this.state = {
       status: "running",
@@ -43,9 +63,16 @@ class SimulationJobRunner {
       lastExitCode: null,
       error: null,
       log: [],
+      scenarioId: activeScenarioId,
     };
 
-    const child = spawn("bash", ["-lc", "npm run refresh-all && poetry run fantasy sim rest-of-season --simulations 500"], {
+    const command = buildSimCommand(scenarioForCommand);
+    this.state.log.push(`Starting refresh${baseline ? " (baseline)" : ` (scenario: ${activeScenarioId})`}`);
+    if (this.state.log.length > MAX_LOG_LINES) {
+      this.state.log.splice(0, this.state.log.length - MAX_LOG_LINES);
+    }
+
+    const child = spawn("bash", ["-lc", command], {
       cwd: REPO_ROOT,
       env: { ...process.env, FORCE_COLOR: "0" },
       stdio: ["ignore", "pipe", "pipe"],
@@ -75,6 +102,7 @@ class SimulationJobRunner {
         lastExitCode: null,
         error: error.message,
         log: [...this.state.log, `ERROR: ${error.message}`].slice(-MAX_LOG_LINES),
+        scenarioId: activeScenarioId,
       };
       this.child = null;
     });
@@ -89,6 +117,7 @@ class SimulationJobRunner {
           lastExitCode: 0,
           error: null,
           log: this.state.log,
+          scenarioId: activeScenarioId,
         };
       } else {
         const error = signal
@@ -101,6 +130,7 @@ class SimulationJobRunner {
           lastExitCode: code ?? null,
           error,
           log: [...this.state.log, `ERROR: ${error}`].slice(-MAX_LOG_LINES),
+          scenarioId: activeScenarioId,
         };
       }
       this.child = null;

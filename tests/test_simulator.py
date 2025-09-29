@@ -1,10 +1,11 @@
+import json
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from fantasy_nfl.settings import AppSettings
-from fantasy_nfl.simulator import RestOfSeasonSimulator
+from fantasy_nfl.simulator import RestOfSeasonSimulator, default_simulation_output
 
 
 def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
@@ -264,3 +265,159 @@ def test_simulator_monte_carlo_summary(tmp_path: Path) -> None:
     assert beta["playoff_odds"] == pytest.approx(0.0)
     assert alpha["seed_distribution"]["1"] == pytest.approx(1.0)
     assert beta["seed_distribution"]["2"] == pytest.approx(1.0)
+
+
+def test_simulator_applies_overlays(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    create_minimal_artifacts(data_root)
+
+    espn_out = data_root / "out" / "espn" / "2025"
+    write_csv(
+        espn_out / "weekly_scores_2025_week_1.csv",
+        [
+            {
+                "team_id": 1,
+                "player_name": "Baseline QB",
+                "lineup_slot": "QB",
+                "espn_position": "QB",
+                "score_total": 120,
+                "counts_for_score": True,
+            },
+            {
+                "team_id": 2,
+                "player_name": "Baseline QB",
+                "lineup_slot": "QB",
+                "espn_position": "QB",
+                "score_total": 115,
+                "counts_for_score": True,
+            },
+        ],
+    )
+
+    raw_dir = data_root / "raw" / "espn" / "2025"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    raw_payload = {
+        "schedule": [
+            {
+                "matchupPeriodId": 1,
+                "id": 101,
+                "home": {"teamId": 1, "totalPoints": 120},
+                "away": {"teamId": 2, "totalPoints": 115},
+                "winner": "AWAY",
+            },
+            {
+                "matchupPeriodId": 2,
+                "id": 202,
+                "home": {"teamId": 2, "totalPoints": 0},
+                "away": {"teamId": 1, "totalPoints": 0},
+                "winner": "UNDECIDED",
+            },
+        ]
+    }
+    (raw_dir / "view-mMatchup.json").write_text(json.dumps(raw_payload, indent=2))
+
+    overlay_dir = data_root / "overlays" / "2025"
+    overlay_dir.mkdir(parents=True, exist_ok=True)
+    overlay_payload = {
+        "scenario_id": "what-if",
+        "label": "What If",
+        "season": 2025,
+        "completed_weeks": {
+            "1": {
+                "teams": {
+                    "1": {
+                        "entries": [
+                            {
+                                "player_name": "Overlay QB",
+                                "lineup_slot": "QB",
+                                "espn_position": "QB",
+                                "score_total": 150,
+                                "counts_for_score": True,
+                            }
+                        ]
+                    },
+                    "2": {
+                        "entries": [
+                            {
+                                "player_name": "Overlay Opp QB",
+                                "lineup_slot": "QB",
+                                "espn_position": "QB",
+                                "score_total": 90,
+                                "counts_for_score": True,
+                            }
+                        ]
+                    },
+                },
+                "matchups": {
+                    "101": {
+                        "home_team_id": 1,
+                        "away_team_id": 2,
+                        "home_points": 150,
+                        "away_points": 90,
+                        "winner": "HOME",
+                    }
+                },
+            }
+        },
+        "projection_weeks": {
+            "2": {
+                "teams": {
+                    "1": {
+                        "entries": [
+                            {
+                                "player_name": "Overlay Week2 QB",
+                                "lineup_slot": "QB",
+                                "espn_position": "QB",
+                                "projected_points": 99,
+                                "counts_for_score": True,
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+    }
+    (overlay_dir / "what-if.json").write_text(json.dumps(overlay_payload, indent=2))
+
+    settings = sample_settings(data_root)
+    simulator = RestOfSeasonSimulator(settings)
+    dataset = simulator.build_dataset(season=2025, start_week=2, end_week=2, scenario_id="what-if")
+
+    scenario_meta = dataset.get("scenario")
+    assert isinstance(scenario_meta, dict)
+    assert scenario_meta["id"] == "what-if"
+    assert scenario_meta["overrides"]["completed_weeks"] == [1]
+    assert scenario_meta["overrides"]["projection_weeks"] == [2]
+
+    assert dataset.get("completed_weeks") == [1]
+
+    team1_schedule = dataset["team_schedule"]["1"]
+    actual_flags = [(entry["week"], entry.get("is_actual")) for entry in team1_schedule]
+    assert (1, True) in actual_flags, actual_flags
+    week1_entry = next(
+        entry for entry in team1_schedule if entry["week"] == 1 and entry.get("is_actual")
+    )
+    assert week1_entry["actual_points"] == 150.0
+    assert week1_entry["result"] == "win"
+
+    week2_entry = next(
+        entry for entry in team1_schedule if entry["week"] == 2 and not entry.get("is_actual", False)
+    )
+    assert week2_entry["projected_points"] == 99.0
+
+    team1_standing = next(item for item in dataset["standings"] if item["team"]["team_id"] == 1)
+    assert team1_standing["projected_points"] == pytest.approx(249.0, rel=1e-6)
+
+
+def test_default_simulation_output_handles_scenarios(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    settings = sample_settings(data_root)
+
+    baseline = default_simulation_output(settings, 2025)
+    assert baseline.name == "rest_of_season.json"
+
+    custom = default_simulation_output(settings, 2025, "what-if")
+    assert custom.name == "rest_of_season__scenario-what-if.json"
+
+    mixed = default_simulation_output(settings, 2025, "My Fancy Scenario")
+    assert mixed.name == "rest_of_season__scenario-my-fancy-scenario.json"

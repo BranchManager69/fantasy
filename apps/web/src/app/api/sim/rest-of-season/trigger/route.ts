@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 
 import { simJobRunner } from "@/server/sim-job";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const url = new URL(request.url);
+  const scenarioParam = url.searchParams.get("scenario");
+  const scenarioId = scenarioParam && scenarioParam.trim() ? scenarioParam.trim() : undefined;
   try {
-    const snapshot = simJobRunner.start();
+    const snapshot = simJobRunner.start(scenarioId);
     return NextResponse.json(snapshot, { status: 202, headers: { "cache-control": "no-store" } });
   } catch (error) {
     if (error instanceof Error && error.message.includes("already running")) {

@@ -1,0 +1,8 @@
+{
+  "2025-11-27": [
+    { "start": "12:00", "end": "20:00", "intervalMinutes": 1, "label": "thanksgiving" }
+  ],
+  "2025-11-29": [
+    { "start": "15:30", "end": "22:30", "intervalMinutes": 1, "label": "black-friday" }
+  ]
+}

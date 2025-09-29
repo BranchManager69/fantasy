@@ -1,0 +1,3764 @@
+{
+  "scenario_id": "cli-demo",
+  "season": 2025,
+  "label": "CLI Demo",
+  "updated_at": "2025-09-28T04:43:50.150401+00:00",
+  "completed_weeks": {
+    "4": {
+      "teams": {
+        "1": {
+          "entries": [
+            {
+              "player_name": "Chase Brown",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4362238,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jaxon Smith-Njigba",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.2,
+              "counts_for_score": true,
+              "espn_player_id": 4430878,
+              "score_base": 0.2,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "George Kittle",
+              "lineup_slot": "IR",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3040151,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "TreVeyon Henderson",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4432710,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rashee Rice",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4428331,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "DJ Moore",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3915416,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ricky Pearsall",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4428209,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Drake Maye",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4431452,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tucker Kraft",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4572680,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Caleb Williams",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431611,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ollie Gordon II",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4711533,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Harold Fannin Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 5083076,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dontayvion Wicks",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4428850,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Brock Purdy",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4361741,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "2": {
+          "entries": [
+            {
+              "player_name": "Jahmyr Gibbs",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4429795,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kenneth Walker III",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 7.800000000000001,
+              "counts_for_score": true,
+              "espn_player_id": 4567048,
+              "score_base": 7.800000000000001,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Breece Hall",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4427366,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Bo Nix",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426338,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Matthew Golden",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4701936,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "George Pickens",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426354,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Emeka Egbuka",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4567750,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Evan Engram",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3051876,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Chris Olave",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4361370,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rashod Bateman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4360939,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dylan Sampson",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 5081397,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Isaac TeSlaa",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 5123663,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dalton Schultz",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3117256,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "3": {
+          "entries": [
+            {
+              "player_name": "Nico Collins",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4258173,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "DK Metcalf",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4047650,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Isiah Pacheco",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4361529,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dalton Kincaid",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4385690,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rachaad White",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4697815,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Brandon Aiyuk",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4360438,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jordan Love",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4036378,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Quinshon Judkins",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4685702,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Isaac Guerendo",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4372561,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Josh Downs",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4688813,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Saquon Barkley",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3929630,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Joe Burrow",
+              "lineup_slot": "IR",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3915511,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Woody Marks",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4429059,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tyquan Thornton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362921,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "4": {
+          "entries": [
+            {
+              "player_name": "De'Von Achane",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4429160,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Puka Nacua",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426515,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tee Higgins",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4239993,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Travis Kelce",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 15847,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Justin Herbert",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4038941,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Keenan Allen",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 15818,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Deebo Samuel",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3126486,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kareem Hunt",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3059915,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jalen Coker",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4695883,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Quentin Johnston",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4429025,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jonnu Smith",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3054212,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rico Dowdle",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4038815,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Emari Demercado",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362478,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Chris Rodriguez Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362619,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "5": {
+          "entries": [
+            {
+              "player_name": "Josh Allen",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3918298,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Trey McBride",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 7.5,
+              "counts_for_score": true,
+              "espn_player_id": 4361307,
+              "score_base": 7.5,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Davante Adams",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 16800,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Omarion Hampton",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4685382,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ladd McConkey",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4612826,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "David Njoku",
+              "lineup_slot": "FLEX",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3123076,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Cedric Tillman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4369863,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tyjae Spears",
+              "lineup_slot": "IR",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4428557,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Cade Otton",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4243331,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ray-Ray McCloud III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3728262,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Justice Hill",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4038441,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Darren Waller",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 2576925,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Hunter Renfrow",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3135321,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "6": {
+          "entries": [
+            {
+              "player_name": "Derrick Henry",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3043078,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Amon-Ra St. Brown",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4374302,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Lamar Jackson",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3916387,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tyreek Hill",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3116406,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jayden Reed",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362249,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Travis Etienne Jr.",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4239996,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Hollywood Brown",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4241372,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Braelon Allen",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4685247,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dallas Goedert",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3121023,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Zach Ertz",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 15835,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Isaiah Bond",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4808839,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "DeAndre Hopkins",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 15795,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Miles Sanders",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4045163,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dyami Brown",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4361577,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "7": {
+          "entries": [
+            {
+              "player_name": "Malik Nabers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4595348,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Calvin Ridley",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3925357,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jakobi Meyers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3916433,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Terry McLaurin",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3121422,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kyle Pitts Sr.",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4360248,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jaylen Warren",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4569987,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "David Montgomery",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4035538,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Javonte Williams",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4361579,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "RJ Harvey",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4568490,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Keon Coleman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4635008,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Mark Andrews",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3116365,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Nick Chubb",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3128720,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "C.J. Stroud",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4432577,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "8": {
+          "entries": [
+            {
+              "player_name": "Jonathan Taylor",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4242335,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ashton Jeanty",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4890973,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Brenton Strange",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4430539,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Elic Ayomanor",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4883647,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Juwan Johnson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3929645,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Blake Corum",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4429096,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tetairoa McMillan",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4685472,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jayden Daniels",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4426348,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Bucky Irving",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4596448,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jaxson Dart",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4689114,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "CeeDee Lamb",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4241389,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Xavier Legette",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4430034,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Adonai Mitchell",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4597500,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jaydon Blue",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4685279,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "9": {
+          "entries": [
+            {
+              "player_name": "Brock Bowers",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4432665,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Mike Evans",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 16737,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Chuba Hubbard",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4241416,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Khalil Shakir",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4373678,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Stefon Diggs",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 2976212,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Christian Kirk",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3895856,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Bhayshul Tuten",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4882093,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Hunter Henry",
+              "lineup_slot": "FLEX",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3046439,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Romeo Doubs",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4361432,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Daniel Jones",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3917792,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Wan'Dale Robinson",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4569587,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tory Horton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 2.0,
+              "counts_for_score": false,
+              "espn_player_id": 4597703,
+              "score_base": 2.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Troy Franklin",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431280,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "10": {
+          "entries": [
+            {
+              "player_name": "Drake London",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426502,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Alvin Kamara",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3054850,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kyren Williams",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4430737,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jalen Hurts",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4040715,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "DeVonta Smith",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4241478,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tony Pollard",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3916148,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Travis Hunter",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4685415,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "T.J. Hockenson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4036133,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Michael Pittman Jr.",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4035687,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jauan Jennings",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3886598,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jordan Addison",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4429205,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Dak Prescott",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 2577417,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Ja'Tavion Sanders",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431588,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "11": {
+          "entries": [
+            {
+              "player_name": "A.J. Brown",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4047646,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Josh Jacobs",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4047365,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Xavier Worthy",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4683062,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Patrick Mahomes",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3139477,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Courtland Sutton",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3128429,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jameson Williams",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426388,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Aaron Jones Sr.",
+              "lineup_slot": "IR",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3042519,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jacory Croskey-Merritt",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4575131,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Zach Charbonnet",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.6000000000000001,
+              "counts_for_score": false,
+              "espn_player_id": 4426385,
+              "score_base": 0.6000000000000001,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tyler Warren",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4431459,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rhamondre Stevenson",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4569173,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Luther Burden III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4685278,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "J.K. Dobbins",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4241985,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jared Goff",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3046779,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "12": {
+          "entries": [
+            {
+              "player_name": "Cam Skattebo",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4696981,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Bijan Robinson",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4430807,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Marvin Harrison Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 1.8,
+              "counts_for_score": false,
+              "espn_player_id": 4432708,
+              "score_base": 1.8,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "James Cook",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4379399,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Garrett Wilson",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4569618,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rome Odunze",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4431299,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Colston Loveland",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4723086,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Baker Mayfield",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3052587,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Chris Godwin Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3116165,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Brian Robinson Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4241474,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kyle Monangai",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4608686,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Sterling Shepard",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 2976592,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Oronde Gadsden II",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4595342,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "13": {
+          "entries": [
+            {
+              "player_name": "Christian McCaffrey",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3117251,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Brian Thomas Jr.",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4432773,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jaylen Waddle",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4372016,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Zay Flowers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4429615,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kyler Murray",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": -1.2999999999999998,
+              "counts_for_score": true,
+              "espn_player_id": 3917315,
+              "score_base": -1.2999999999999998,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jordan Mason",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4360569,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Justin Fields",
+              "lineup_slot": "IR",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362887,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Rashid Shaheed",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4032473,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Darnell Mooney",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4040655,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tank Bigsby",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4429013,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jake Ferguson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4242355,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Darius Slayton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3916945,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jerome Ford",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4372019,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jalen Nailor",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4382466,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        },
+        "14": {
+          "entries": [
+            {
+              "player_name": "Ja'Marr Chase",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4362628,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Justin Jefferson",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4262921,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "D'Andre Swift",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4259545,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Sam LaPorta",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4430027,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Jerry Jeudy",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4241463,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Cooper Kupp",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 2.1,
+              "counts_for_score": false,
+              "espn_player_id": 2977187,
+              "score_base": 2.1,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Trey Benson",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "score_total": 5.9,
+              "counts_for_score": true,
+              "espn_player_id": 4429275,
+              "score_base": 5.9,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tyler Allgeier",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4373626,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Isaiah Likely",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4361050,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Kenneth Gainwell",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4371733,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Calvin Austin III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4243389,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Tre Tucker",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4428718,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            },
+            {
+              "player_name": "Geno Smith",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "score_total": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 15864,
+              "score_base": 0.0,
+              "score_bonus": 0.0,
+              "score_position": 0.0
+            }
+          ]
+        }
+      },
+      "matchups": {
+        "22": {
+          "home_team_id": 5,
+          "away_team_id": 10,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "23": {
+          "home_team_id": 4,
+          "away_team_id": 8,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "24": {
+          "home_team_id": 2,
+          "away_team_id": 11,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "25": {
+          "home_team_id": 12,
+          "away_team_id": 6,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "26": {
+          "home_team_id": 14,
+          "away_team_id": 13,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "27": {
+          "home_team_id": 7,
+          "away_team_id": 3,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        },
+        "28": {
+          "home_team_id": 9,
+          "away_team_id": 1,
+          "home_points": 0.0,
+          "away_points": 0.0,
+          "winner": "UNDECIDED"
+        }
+      }
+    }
+  },
+  "projection_weeks": {
+    "5": {
+      "teams": {
+        "1": {
+          "entries": [
+            {
+              "player_name": "Chase Brown",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 11.113698227000002,
+              "counts_for_score": true,
+              "espn_player_id": 4362238
+            },
+            {
+              "player_name": "Jaxon Smith-Njigba",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 10.602280279,
+              "counts_for_score": true,
+              "espn_player_id": 4430878
+            },
+            {
+              "player_name": "George Kittle",
+              "lineup_slot": "IR",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3040151
+            },
+            {
+              "player_name": "TreVeyon Henderson",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 4.7609079030000006,
+              "counts_for_score": true,
+              "espn_player_id": 4432710
+            },
+            {
+              "player_name": "Rashee Rice",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4428331
+            },
+            {
+              "player_name": "DJ Moore",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 3915416
+            },
+            {
+              "player_name": "Ricky Pearsall",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 7.9459876898,
+              "counts_for_score": true,
+              "espn_player_id": 4428209
+            },
+            {
+              "player_name": "Drake Maye",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 17.090942292,
+              "counts_for_score": true,
+              "espn_player_id": 4431452
+            },
+            {
+              "player_name": "Tucker Kraft",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4572680
+            },
+            {
+              "player_name": "Caleb Williams",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431611
+            },
+            {
+              "player_name": "Ollie Gordon II",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.8997164576,
+              "counts_for_score": false,
+              "espn_player_id": 4711533
+            },
+            {
+              "player_name": "Harold Fannin Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 3.5039499116,
+              "counts_for_score": false,
+              "espn_player_id": 5083076
+            },
+            {
+              "player_name": "Dontayvion Wicks",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4428850
+            },
+            {
+              "player_name": "Brock Purdy",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "projected_points": 17.108928479,
+              "counts_for_score": false,
+              "espn_player_id": 4361741
+            }
+          ]
+        },
+        "2": {
+          "entries": [
+            {
+              "player_name": "Jahmyr Gibbs",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 16.991848929000003,
+              "counts_for_score": true,
+              "espn_player_id": 4429795
+            },
+            {
+              "player_name": "Kenneth Walker III",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 10.780785348000002,
+              "counts_for_score": true,
+              "espn_player_id": 4567048
+            },
+            {
+              "player_name": "Breece Hall",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 12.699760796,
+              "counts_for_score": true,
+              "espn_player_id": 4427366
+            },
+            {
+              "player_name": "Bo Nix",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 16.066208094,
+              "counts_for_score": true,
+              "espn_player_id": 4426338
+            },
+            {
+              "player_name": "Matthew Golden",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4701936
+            },
+            {
+              "player_name": "George Pickens",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.899786767,
+              "counts_for_score": true,
+              "espn_player_id": 4426354
+            },
+            {
+              "player_name": "Emeka Egbuka",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.5648550144,
+              "counts_for_score": true,
+              "espn_player_id": 4567750
+            },
+            {
+              "player_name": "Evan Engram",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 3.029074108,
+              "counts_for_score": false,
+              "espn_player_id": 3051876
+            },
+            {
+              "player_name": "Chris Olave",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 8.805939008000001,
+              "counts_for_score": false,
+              "espn_player_id": 4361370
+            },
+            {
+              "player_name": "Rashod Bateman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 6.611831200999999,
+              "counts_for_score": false,
+              "espn_player_id": 4360939
+            },
+            {
+              "player_name": "Dylan Sampson",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 2.1541466471,
+              "counts_for_score": false,
+              "espn_player_id": 5081397
+            },
+            {
+              "player_name": "Isaac TeSlaa",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 1.4834725543999998,
+              "counts_for_score": false,
+              "espn_player_id": 5123663
+            },
+            {
+              "player_name": "Dalton Schultz",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.370543265,
+              "counts_for_score": true,
+              "espn_player_id": 3117256
+            }
+          ]
+        },
+        "3": {
+          "entries": [
+            {
+              "player_name": "Nico Collins",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 12.042261671,
+              "counts_for_score": true,
+              "espn_player_id": 4258173
+            },
+            {
+              "player_name": "DK Metcalf",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4047650
+            },
+            {
+              "player_name": "Isiah Pacheco",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 7.074944912999999,
+              "counts_for_score": true,
+              "espn_player_id": 4361529
+            },
+            {
+              "player_name": "Dalton Kincaid",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.798769881000001,
+              "counts_for_score": true,
+              "espn_player_id": 4385690
+            },
+            {
+              "player_name": "Rachaad White",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 3.997782151299999,
+              "counts_for_score": false,
+              "espn_player_id": 4697815
+            },
+            {
+              "player_name": "Brandon Aiyuk",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4360438
+            },
+            {
+              "player_name": "Jordan Love",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4036378
+            },
+            {
+              "player_name": "Quinshon Judkins",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 11.898956198000002,
+              "counts_for_score": true,
+              "espn_player_id": 4685702
+            },
+            {
+              "player_name": "Isaac Guerendo",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4372561
+            },
+            {
+              "player_name": "Josh Downs",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 4.354019631,
+              "counts_for_score": false,
+              "espn_player_id": 4688813
+            },
+            {
+              "player_name": "Saquon Barkley",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 15.729289902,
+              "counts_for_score": true,
+              "espn_player_id": 3929630
+            },
+            {
+              "player_name": "Joe Burrow",
+              "lineup_slot": "IR",
+              "espn_position": "TQB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3915511
+            },
+            {
+              "player_name": "Woody Marks",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 5.56827481,
+              "counts_for_score": false,
+              "espn_player_id": 4429059
+            },
+            {
+              "player_name": "Tyquan Thornton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 3.770403661,
+              "counts_for_score": false,
+              "espn_player_id": 4362921
+            }
+          ]
+        },
+        "4": {
+          "entries": [
+            {
+              "player_name": "De'Von Achane",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 13.939298453,
+              "counts_for_score": true,
+              "espn_player_id": 4429160
+            },
+            {
+              "player_name": "Puka Nacua",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 13.0354520989,
+              "counts_for_score": true,
+              "espn_player_id": 4426515
+            },
+            {
+              "player_name": "Tee Higgins",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 7.835385406,
+              "counts_for_score": false,
+              "espn_player_id": 4239993
+            },
+            {
+              "player_name": "Travis Kelce",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 6.172596739,
+              "counts_for_score": true,
+              "espn_player_id": 15847
+            },
+            {
+              "player_name": "Justin Herbert",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 18.997822897999995,
+              "counts_for_score": true,
+              "espn_player_id": 4038941
+            },
+            {
+              "player_name": "Keenan Allen",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 9.04308562,
+              "counts_for_score": true,
+              "espn_player_id": 15818
+            },
+            {
+              "player_name": "Deebo Samuel",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 8.4559402222,
+              "counts_for_score": true,
+              "espn_player_id": 3126486
+            },
+            {
+              "player_name": "Kareem Hunt",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 6.5551719386,
+              "counts_for_score": false,
+              "espn_player_id": 3059915
+            },
+            {
+              "player_name": "Jalen Coker",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "projected_points": 4.495275557,
+              "counts_for_score": false,
+              "espn_player_id": 4695883
+            },
+            {
+              "player_name": "Quentin Johnston",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 10.5056303373,
+              "counts_for_score": true,
+              "espn_player_id": 4429025
+            },
+            {
+              "player_name": "Jonnu Smith",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3054212
+            },
+            {
+              "player_name": "Rico Dowdle",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 5.940088821399999,
+              "counts_for_score": false,
+              "espn_player_id": 4038815
+            },
+            {
+              "player_name": "Emari Demercado",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.888874715,
+              "counts_for_score": false,
+              "espn_player_id": 4362478
+            },
+            {
+              "player_name": "Chris Rodriguez Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.5495532668,
+              "counts_for_score": false,
+              "espn_player_id": 4362619
+            }
+          ]
+        },
+        "5": {
+          "entries": [
+            {
+              "player_name": "Josh Allen",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 22.397370662,
+              "counts_for_score": true,
+              "espn_player_id": 3918298
+            },
+            {
+              "player_name": "Trey McBride",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 8.850858778,
+              "counts_for_score": true,
+              "espn_player_id": 4361307
+            },
+            {
+              "player_name": "Davante Adams",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 11.592021412,
+              "counts_for_score": true,
+              "espn_player_id": 16800
+            },
+            {
+              "player_name": "Omarion Hampton",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 13.455171472999998,
+              "counts_for_score": true,
+              "espn_player_id": 4685382
+            },
+            {
+              "player_name": "Ladd McConkey",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 8.089542712000002,
+              "counts_for_score": true,
+              "espn_player_id": 4612826
+            },
+            {
+              "player_name": "David Njoku",
+              "lineup_slot": "FLEX",
+              "espn_position": "TE",
+              "projected_points": 4.886907214000001,
+              "counts_for_score": true,
+              "espn_player_id": 3123076
+            },
+            {
+              "player_name": "Cedric Tillman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 4.394958085000001,
+              "counts_for_score": false,
+              "espn_player_id": 4369863
+            },
+            {
+              "player_name": "Tyjae Spears",
+              "lineup_slot": "IR",
+              "espn_position": "RB",
+              "projected_points": 5.0181357570000005,
+              "counts_for_score": false,
+              "espn_player_id": 4428557
+            },
+            {
+              "player_name": "Cade Otton",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 3.647210622,
+              "counts_for_score": false,
+              "espn_player_id": 4243331
+            },
+            {
+              "player_name": "Ray-Ray McCloud III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3728262
+            },
+            {
+              "player_name": "Justice Hill",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 3.9909750660000007,
+              "counts_for_score": false,
+              "espn_player_id": 4038441
+            },
+            {
+              "player_name": "Darren Waller",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 2.640263704,
+              "counts_for_score": false,
+              "espn_player_id": 2576925
+            },
+            {
+              "player_name": "Hunter Renfrow",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 2.235052359,
+              "counts_for_score": true,
+              "espn_player_id": 3135321
+            }
+          ]
+        },
+        "6": {
+          "entries": [
+            {
+              "player_name": "Derrick Henry",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 16.301262421,
+              "counts_for_score": true,
+              "espn_player_id": 3043078
+            },
+            {
+              "player_name": "Amon-Ra St. Brown",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 11.5944792804,
+              "counts_for_score": true,
+              "espn_player_id": 4374302
+            },
+            {
+              "player_name": "Lamar Jackson",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 21.899361751,
+              "counts_for_score": true,
+              "espn_player_id": 3916387
+            },
+            {
+              "player_name": "Tyreek Hill",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.0555316451,
+              "counts_for_score": true,
+              "espn_player_id": 3116406
+            },
+            {
+              "player_name": "Jayden Reed",
+              "lineup_slot": "IR",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4362249
+            },
+            {
+              "player_name": "Travis Etienne Jr.",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 9.470001321000002,
+              "counts_for_score": true,
+              "espn_player_id": 4239996
+            },
+            {
+              "player_name": "Hollywood Brown",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 5.536921202,
+              "counts_for_score": true,
+              "espn_player_id": 4241372
+            },
+            {
+              "player_name": "Braelon Allen",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.7742930914,
+              "counts_for_score": false,
+              "espn_player_id": 4685247
+            },
+            {
+              "player_name": "Dallas Goedert",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 4.4409220437000005,
+              "counts_for_score": false,
+              "espn_player_id": 3121023
+            },
+            {
+              "player_name": "Zach Ertz",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.334111453,
+              "counts_for_score": true,
+              "espn_player_id": 15835
+            },
+            {
+              "player_name": "Isaiah Bond",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 2.356272878,
+              "counts_for_score": false,
+              "espn_player_id": 4808839
+            },
+            {
+              "player_name": "DeAndre Hopkins",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 2.1002164800000003,
+              "counts_for_score": false,
+              "espn_player_id": 15795
+            },
+            {
+              "player_name": "Miles Sanders",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.0400928379,
+              "counts_for_score": false,
+              "espn_player_id": 4045163
+            },
+            {
+              "player_name": "Dyami Brown",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.6141761079,
+              "counts_for_score": false,
+              "espn_player_id": 4361577
+            }
+          ]
+        },
+        "7": {
+          "entries": [
+            {
+              "player_name": "Malik Nabers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 12.1050704532,
+              "counts_for_score": true,
+              "espn_player_id": 4595348
+            },
+            {
+              "player_name": "Calvin Ridley",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 7.634130593799999,
+              "counts_for_score": false,
+              "espn_player_id": 3925357
+            },
+            {
+              "player_name": "Jakobi Meyers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.1182758471,
+              "counts_for_score": true,
+              "espn_player_id": 3916433
+            },
+            {
+              "player_name": "Terry McLaurin",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 8.0905813334,
+              "counts_for_score": false,
+              "espn_player_id": 3121422
+            },
+            {
+              "player_name": "Kyle Pitts Sr.",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4360248
+            },
+            {
+              "player_name": "Jaylen Warren",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4569987
+            },
+            {
+              "player_name": "David Montgomery",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 11.999474696,
+              "counts_for_score": true,
+              "espn_player_id": 4035538
+            },
+            {
+              "player_name": "Javonte Williams",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 12.319950476,
+              "counts_for_score": true,
+              "espn_player_id": 4361579
+            },
+            {
+              "player_name": "RJ Harvey",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.791007193,
+              "counts_for_score": false,
+              "espn_player_id": 4568490
+            },
+            {
+              "player_name": "Keon Coleman",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 7.551811346000001,
+              "counts_for_score": false,
+              "espn_player_id": 4635008
+            },
+            {
+              "player_name": "Mark Andrews",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.898063563599999,
+              "counts_for_score": true,
+              "espn_player_id": 3116365
+            },
+            {
+              "player_name": "Nick Chubb",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 8.504071096999999,
+              "counts_for_score": false,
+              "espn_player_id": 3128720
+            },
+            {
+              "player_name": "C.J. Stroud",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 16.134990917,
+              "counts_for_score": true,
+              "espn_player_id": 4432577
+            }
+          ]
+        },
+        "8": {
+          "entries": [
+            {
+              "player_name": "Jonathan Taylor",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 20.71604028,
+              "counts_for_score": true,
+              "espn_player_id": 4242335
+            },
+            {
+              "player_name": "Ashton Jeanty",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 10.889050284,
+              "counts_for_score": true,
+              "espn_player_id": 4890973
+            },
+            {
+              "player_name": "Brenton Strange",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 4.479864224,
+              "counts_for_score": false,
+              "espn_player_id": 4430539
+            },
+            {
+              "player_name": "Elic Ayomanor",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 5.207523230000001,
+              "counts_for_score": true,
+              "espn_player_id": 4883647
+            },
+            {
+              "player_name": "Juwan Johnson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.557498823,
+              "counts_for_score": true,
+              "espn_player_id": 3929645
+            },
+            {
+              "player_name": "Blake Corum",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 3.6624440999,
+              "counts_for_score": false,
+              "espn_player_id": 4429096
+            },
+            {
+              "player_name": "Tetairoa McMillan",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.41712297,
+              "counts_for_score": true,
+              "espn_player_id": 4685472
+            },
+            {
+              "player_name": "Jayden Daniels",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 19.881369016,
+              "counts_for_score": true,
+              "espn_player_id": 4426348
+            },
+            {
+              "player_name": "Bucky Irving",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 13.070812785,
+              "counts_for_score": true,
+              "espn_player_id": 4596448
+            },
+            {
+              "player_name": "Jaxson Dart",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "projected_points": 15.096286077,
+              "counts_for_score": false,
+              "espn_player_id": 4689114
+            },
+            {
+              "player_name": "CeeDee Lamb",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4241389
+            },
+            {
+              "player_name": "Xavier Legette",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 4.468273008800001,
+              "counts_for_score": false,
+              "espn_player_id": 4430034
+            },
+            {
+              "player_name": "Adonai Mitchell",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 2.8424555022000004,
+              "counts_for_score": false,
+              "espn_player_id": 4597500
+            }
+          ]
+        },
+        "9": {
+          "entries": [
+            {
+              "player_name": "Brock Bowers",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 8.0196725977,
+              "counts_for_score": true,
+              "espn_player_id": 4432665
+            },
+            {
+              "player_name": "Mike Evans",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 16737
+            },
+            {
+              "player_name": "Chuba Hubbard",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 12.355248102000004,
+              "counts_for_score": true,
+              "espn_player_id": 4241416
+            },
+            {
+              "player_name": "Khalil Shakir",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 5.734366894000001,
+              "counts_for_score": true,
+              "espn_player_id": 4373678
+            },
+            {
+              "player_name": "Stefon Diggs",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 4.556831044,
+              "counts_for_score": true,
+              "espn_player_id": 2976212
+            },
+            {
+              "player_name": "Christian Kirk",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 7.219493290999999,
+              "counts_for_score": false,
+              "espn_player_id": 3895856
+            },
+            {
+              "player_name": "Bhayshul Tuten",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.3539815823,
+              "counts_for_score": false,
+              "espn_player_id": 4882093
+            },
+            {
+              "player_name": "Hunter Henry",
+              "lineup_slot": "FLEX",
+              "espn_position": "TE",
+              "projected_points": 7.09916155,
+              "counts_for_score": true,
+              "espn_player_id": 3046439
+            },
+            {
+              "player_name": "Romeo Doubs",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4361432
+            },
+            {
+              "player_name": "Daniel Jones",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 19.425166606,
+              "counts_for_score": true,
+              "espn_player_id": 3917792
+            },
+            {
+              "player_name": "Wan'Dale Robinson",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.455311293099999,
+              "counts_for_score": false,
+              "espn_player_id": 4569587
+            },
+            {
+              "player_name": "Tory Horton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.160194242999999,
+              "counts_for_score": false,
+              "espn_player_id": 4597703
+            },
+            {
+              "player_name": "Troy Franklin",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 6.358232115,
+              "counts_for_score": false,
+              "espn_player_id": 4431280
+            }
+          ]
+        },
+        "10": {
+          "entries": [
+            {
+              "player_name": "Drake London",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4426502
+            },
+            {
+              "player_name": "Alvin Kamara",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 12.707429065,
+              "counts_for_score": true,
+              "espn_player_id": 3054850
+            },
+            {
+              "player_name": "Kyren Williams",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 13.947028689,
+              "counts_for_score": true,
+              "espn_player_id": 4430737
+            },
+            {
+              "player_name": "Jalen Hurts",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 19.247575194,
+              "counts_for_score": true,
+              "espn_player_id": 4040715
+            },
+            {
+              "player_name": "DeVonta Smith",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 6.626309922000001,
+              "counts_for_score": true,
+              "espn_player_id": 4241478
+            },
+            {
+              "player_name": "Tony Pollard",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 8.768086870000001,
+              "counts_for_score": false,
+              "espn_player_id": 3916148
+            },
+            {
+              "player_name": "Travis Hunter",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.20437921,
+              "counts_for_score": false,
+              "espn_player_id": 4685415
+            },
+            {
+              "player_name": "T.J. Hockenson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 5.169936249000001,
+              "counts_for_score": true,
+              "espn_player_id": 4036133
+            },
+            {
+              "player_name": "Michael Pittman Jr.",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 6.1488696030000005,
+              "counts_for_score": true,
+              "espn_player_id": 4035687
+            },
+            {
+              "player_name": "Jauan Jennings",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 8.290433347,
+              "counts_for_score": false,
+              "espn_player_id": 3886598
+            },
+            {
+              "player_name": "Jordan Addison",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 6.4715153833,
+              "counts_for_score": false,
+              "espn_player_id": 4429205
+            },
+            {
+              "player_name": "Dak Prescott",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "projected_points": 15.809330131,
+              "counts_for_score": false,
+              "espn_player_id": 2577417
+            },
+            {
+              "player_name": "Ja'Tavion Sanders",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431588
+            }
+          ]
+        },
+        "11": {
+          "entries": [
+            {
+              "player_name": "A.J. Brown",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.422067179,
+              "counts_for_score": true,
+              "espn_player_id": 4047646
+            },
+            {
+              "player_name": "Josh Jacobs",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4047365
+            },
+            {
+              "player_name": "Xavier Worthy",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 9.0009820428,
+              "counts_for_score": false,
+              "espn_player_id": 4683062
+            },
+            {
+              "player_name": "Patrick Mahomes",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 17.118504852999997,
+              "counts_for_score": true,
+              "espn_player_id": 3139477
+            },
+            {
+              "player_name": "Courtland Sutton",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 8.379570439,
+              "counts_for_score": true,
+              "espn_player_id": 3128429
+            },
+            {
+              "player_name": "Jameson Williams",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 8.2381996274,
+              "counts_for_score": true,
+              "espn_player_id": 4426388
+            },
+            {
+              "player_name": "Aaron Jones Sr.",
+              "lineup_slot": "IR",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 3042519
+            },
+            {
+              "player_name": "Jacory Croskey-Merritt",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 7.138899098,
+              "counts_for_score": false,
+              "espn_player_id": 4575131
+            },
+            {
+              "player_name": "Zach Charbonnet",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 8.426089278800001,
+              "counts_for_score": false,
+              "espn_player_id": 4426385
+            },
+            {
+              "player_name": "Tyler Warren",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 7.309616731900001,
+              "counts_for_score": true,
+              "espn_player_id": 4431459
+            },
+            {
+              "player_name": "Rhamondre Stevenson",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 7.788338741,
+              "counts_for_score": false,
+              "espn_player_id": 4569173
+            },
+            {
+              "player_name": "Luther Burden III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4685278
+            },
+            {
+              "player_name": "J.K. Dobbins",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 11.110119982000002,
+              "counts_for_score": true,
+              "espn_player_id": 4241985
+            },
+            {
+              "player_name": "Jared Goff",
+              "lineup_slot": "BE",
+              "espn_position": "TQB",
+              "projected_points": 16.086719702499998,
+              "counts_for_score": false,
+              "espn_player_id": 3046779
+            }
+          ]
+        },
+        "12": {
+          "entries": [
+            {
+              "player_name": "Cam Skattebo",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 11.766566202000002,
+              "counts_for_score": true,
+              "espn_player_id": 4696981
+            },
+            {
+              "player_name": "Bijan Robinson",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4430807
+            },
+            {
+              "player_name": "Marvin Harrison Jr.",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 7.73820805,
+              "counts_for_score": true,
+              "espn_player_id": 4432708
+            },
+            {
+              "player_name": "James Cook",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 15.193133555,
+              "counts_for_score": true,
+              "espn_player_id": 4379399
+            },
+            {
+              "player_name": "Garrett Wilson",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 10.5647335194,
+              "counts_for_score": true,
+              "espn_player_id": 4569618
+            },
+            {
+              "player_name": "Rome Odunze",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4431299
+            },
+            {
+              "player_name": "Colston Loveland",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4723086
+            },
+            {
+              "player_name": "Baker Mayfield",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 16.602356088,
+              "counts_for_score": true,
+              "espn_player_id": 3052587
+            },
+            {
+              "player_name": "Chris Godwin Jr.",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 6.4470545358,
+              "counts_for_score": true,
+              "espn_player_id": 3116165
+            },
+            {
+              "player_name": "Brian Robinson Jr.",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 4.0521833378,
+              "counts_for_score": false,
+              "espn_player_id": 4241474
+            },
+            {
+              "player_name": "Kyle Monangai",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4608686
+            },
+            {
+              "player_name": "Sterling Shepard",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.740525289800001,
+              "counts_for_score": false,
+              "espn_player_id": 2976592
+            },
+            {
+              "player_name": "Oronde Gadsden II",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 2.9663553250000003,
+              "counts_for_score": true,
+              "espn_player_id": 4595342
+            }
+          ]
+        },
+        "13": {
+          "entries": [
+            {
+              "player_name": "Christian McCaffrey",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 16.203559601,
+              "counts_for_score": true,
+              "espn_player_id": 3117251
+            },
+            {
+              "player_name": "Brian Thomas Jr.",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.5701994913,
+              "counts_for_score": true,
+              "espn_player_id": 4432773
+            },
+            {
+              "player_name": "Jaylen Waddle",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 7.586950701900001,
+              "counts_for_score": true,
+              "espn_player_id": 4372016
+            },
+            {
+              "player_name": "Zay Flowers",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.605194138000002,
+              "counts_for_score": true,
+              "espn_player_id": 4429615
+            },
+            {
+              "player_name": "Kyler Murray",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 18.578526036000003,
+              "counts_for_score": true,
+              "espn_player_id": 3917315
+            },
+            {
+              "player_name": "Jordan Mason",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 11.156202242,
+              "counts_for_score": true,
+              "espn_player_id": 4360569
+            },
+            {
+              "player_name": "Justin Fields",
+              "lineup_slot": "IR",
+              "espn_position": "TQB",
+              "projected_points": 20.477974065,
+              "counts_for_score": false,
+              "espn_player_id": 4362887
+            },
+            {
+              "player_name": "Rashid Shaheed",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.821757489,
+              "counts_for_score": false,
+              "espn_player_id": 4032473
+            },
+            {
+              "player_name": "Darnell Mooney",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4040655
+            },
+            {
+              "player_name": "Tank Bigsby",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4429013
+            },
+            {
+              "player_name": "Jake Ferguson",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 6.293904562000001,
+              "counts_for_score": true,
+              "espn_player_id": 4242355
+            },
+            {
+              "player_name": "Darius Slayton",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 4.5570833123000005,
+              "counts_for_score": false,
+              "espn_player_id": 3916945
+            },
+            {
+              "player_name": "Jerome Ford",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 2.9664679328,
+              "counts_for_score": false,
+              "espn_player_id": 4372019
+            },
+            {
+              "player_name": "Jalen Nailor",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 3.210855729,
+              "counts_for_score": false,
+              "espn_player_id": 4382466
+            }
+          ]
+        },
+        "14": {
+          "entries": [
+            {
+              "player_name": "Ja'Marr Chase",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 11.284436020099998,
+              "counts_for_score": true,
+              "espn_player_id": 4362628
+            },
+            {
+              "player_name": "Justin Jefferson",
+              "lineup_slot": "WR",
+              "espn_position": "WR",
+              "projected_points": 9.7533397811,
+              "counts_for_score": true,
+              "espn_player_id": 4262921
+            },
+            {
+              "player_name": "D'Andre Swift",
+              "lineup_slot": "RB",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": true,
+              "espn_player_id": 4259545
+            },
+            {
+              "player_name": "Sam LaPorta",
+              "lineup_slot": "TE",
+              "espn_position": "TE",
+              "projected_points": 6.341867313,
+              "counts_for_score": true,
+              "espn_player_id": 4430027
+            },
+            {
+              "player_name": "Jerry Jeudy",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 5.823292449,
+              "counts_for_score": false,
+              "espn_player_id": 4241463
+            },
+            {
+              "player_name": "Cooper Kupp",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 6.904719921,
+              "counts_for_score": false,
+              "espn_player_id": 2977187
+            },
+            {
+              "player_name": "Trey Benson",
+              "lineup_slot": "FLEX",
+              "espn_position": "RB",
+              "projected_points": 13.524998124,
+              "counts_for_score": true,
+              "espn_player_id": 4429275
+            },
+            {
+              "player_name": "Tyler Allgeier",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4373626
+            },
+            {
+              "player_name": "Isaiah Likely",
+              "lineup_slot": "BE",
+              "espn_position": "TE",
+              "projected_points": 3.8685461820000007,
+              "counts_for_score": false,
+              "espn_player_id": 4361050
+            },
+            {
+              "player_name": "Kenneth Gainwell",
+              "lineup_slot": "BE",
+              "espn_position": "RB",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4371733
+            },
+            {
+              "player_name": "Calvin Austin III",
+              "lineup_slot": "BE",
+              "espn_position": "WR",
+              "projected_points": 0.0,
+              "counts_for_score": false,
+              "espn_player_id": 4243389
+            },
+            {
+              "player_name": "Tre Tucker",
+              "lineup_slot": "FLEX",
+              "espn_position": "WR",
+              "projected_points": 6.9673319261,
+              "counts_for_score": true,
+              "espn_player_id": 4428718
+            },
+            {
+              "player_name": "Geno Smith",
+              "lineup_slot": "QB",
+              "espn_position": "TQB",
+              "projected_points": 14.277397456,
+              "counts_for_score": true,
+              "espn_player_id": 15864
+            }
+          ]
+        }
+      }
+    }
+  }
+}

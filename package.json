@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "refresh-all": "poetry run fantasy refresh-all"
+    "refresh-all": "poetry run fantasy refresh-all",
+    "refresh-scheduler": "node scripts/refresh-scheduler.js"
   }
 }
