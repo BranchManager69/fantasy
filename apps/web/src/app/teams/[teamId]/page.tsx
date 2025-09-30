@@ -23,6 +23,8 @@ import {
 } from "@/lib/simulator-data";
 import { normalizeScenarioId, type ScenarioSearchParam } from "@/lib/scenario-utils";
 import { TeamTimeline } from "@/components/team-timeline";
+import { MatchupCard } from "@/components/team/matchup-card";
+import { TeamSummaryCard } from "@/components/team/team-summary-card";
 import type { TeamTimelineEntry } from "@/types/matchup-detail";
 import {
   computeTeamMetrics,
@@ -224,89 +226,13 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
   const bench = nextGame ? sortPlayers(nextGame.teamProjection?.bench) : [];
   const opponentStarters = nextGame ? sortPlayers(nextGame.opponentProjection?.starters) : [];
 
-  const nextGameContent = (() => {
-    if (!nextGame) {
-      return (
-        <>
-          <h3>No games remaining</h3>
-          <p className="team-summary__meta">Regular season complete.</p>
-        </>
-      );
-    }
-
-    const nextStatus = nextGame.status ?? (nextGame.isActual ? (nextGame.result ? "final" : "in_progress") : "upcoming");
-    const isNextLive = nextStatus === "in_progress";
-    const isNextFinal = nextStatus === "final";
-    const labelPrefix = isNextLive ? "Live" : isNextFinal ? "Final" : "Upcoming";
-    const matchupHeading = (
-      <h3>
-        Week {nextGame.week} • {labelPrefix} {nextGame.is_home ? "vs" : "@"}{" "}
-        {nextGame.opponent ? (
-          <Link href={`/teams/${nextGame.opponent.team_id}`}>
-            {nextGame.opponent.name}
-          </Link>
-        ) : (
-          `Team ${nextGame.opponent_team_id}`
-        )}
-      </h3>
-    );
-
-    let body: ReactNode;
-    if (isNextLive) {
-      const liveFor = (nextGame.actualPoints ?? nextGame.projected_points).toFixed(1);
-      const liveAgainst = (nextGame.opponentActualPoints ?? nextGame.opponent_projected_points).toFixed(1);
-      body = (
-        <>
-          <p>{liveFor} – {liveAgainst}</p>
-          <p className="team-summary__meta">
-            {formatActualMargin(nextGame.actualPoints, nextGame.opponentActualPoints, nextStatus)} • {probabilityLabel(nextGame.win_probability)}
-          </p>
-        </>
-      );
-    } else if (isNextFinal) {
-      const finalFor = (nextGame.actualPoints ?? nextGame.projected_points).toFixed(1);
-      const finalAgainst = (nextGame.opponentActualPoints ?? nextGame.opponent_projected_points).toFixed(1);
-      body = (
-        <>
-          <p>{finalFor} – {finalAgainst}</p>
-          <p className="team-summary__meta">{formatActualMargin(nextGame.actualPoints, nextGame.opponentActualPoints, nextStatus)}</p>
-        </>
-      );
-    } else {
-      body = (
-        <>
-          <p>{nextGame.projected_points.toFixed(1)} – {nextGame.opponent_projected_points.toFixed(1)}</p>
-          <p className="team-summary__meta">
-            {probabilityLabel(nextGame.win_probability)} · {formatMargin(nextGame.projected_margin)}
-          </p>
-        </>
-      );
-    }
-
-    return (
-      <>
-        {matchupHeading}
-        {body}
-        {opponentMetrics ? (
-          <>
-            <p className="team-summary__meta">
-              Opponent record {formatSimpleRecord({
-                wins: opponentMetrics.wins,
-                losses: opponentMetrics.losses,
-                ties: opponentMetrics.ties,
-              })}
-              {opponentMetrics.pointsPerGame !== null
-                ? ` · ${opponentMetrics.pointsPerGame.toFixed(1)} PPG`
-                : ` · ${opponentMetrics.pointsFor.toFixed(1)} PF`}
-            </p>
-            {opponentStanding ? (
-              <p className="team-summary__meta">Projected {formatSimpleRecord(opponentStanding.projected_record)}</p>
-            ) : null}
-          </>
-        ) : null}
-      </>
-    );
-  })();
+  const nextGameContent = (
+    <MatchupCard
+      matchup={nextGame}
+      opponentMetrics={opponentMetrics}
+      opponentStandingProjected={opponentStanding?.projected_record ?? null}
+    />
+  );
 
   let runningWins = 0;
   let runningLosses = 0;
@@ -483,19 +409,15 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
             <span>{schedule.length} weeks · {remainingGames} games remaining</span>
           </header>
           <div className="team-summary__grid">
-            <div className="team-summary__card">
-              <span className="team-summary__eyebrow">Efficiency</span>
-              <h3>Per-Game Production</h3>
+            <TeamSummaryCard eyebrow="Efficiency" title="Per-Game Production">
               <p>{pointsPerGame !== null ? `${pointsPerGame.toFixed(1)} PF · ${opponentPointsPerGame?.toFixed(1) ?? "—"} PA` : "—"}</p>
               <p className="team-summary__meta">
                 Avg margin {averageMargin !== null ? `${averageMargin >= 0 ? "+" : ""}${averageMargin.toFixed(1)} pts` : "—"}
               </p>
-            </div>
-            <div className="team-summary__card">
-              <span className="team-summary__eyebrow">Momentum</span>
+            </TeamSummaryCard>
+            <TeamSummaryCard eyebrow="Momentum" title={liveGame ? `Week ${liveGame.week} • Live` : lastGame ? `Week ${lastGame.week} ${lastGame.result === "win" ? "Win" : lastGame.result === "loss" ? "Loss" : "Tie"}` : "Last Result"}>
               {liveGame ? (
                 <>
-                  <h3>Week {liveGame.week} • Live</h3>
                   <p>
                     {(liveGame.actualPoints ?? liveGame.projected_points).toFixed(1)} –
                     {(liveGame.opponentActualPoints ?? liveGame.opponent_projected_points).toFixed(1)}
@@ -504,9 +426,6 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 </>
               ) : lastGame ? (
                 <>
-                  <h3>
-                    Week {lastGame.week} {lastGame.result === "win" ? "Win" : lastGame.result === "loss" ? "Loss" : "Tie"}
-                  </h3>
                   <p>
                     {(lastGame.actualPoints ?? lastGame.projected_points).toFixed(1)} –
                     {(lastGame.opponentActualPoints ?? lastGame.opponent_projected_points).toFixed(1)}
@@ -514,23 +433,21 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                   <p className="team-summary__meta">{formatActualMargin(lastGame.actualPoints, lastGame.opponentActualPoints, lastGame.status)}</p>
                 </>
               ) : (
-                <>
-                  <h3>Last Result</h3>
-                  <p className="team-summary__meta">Season has not started yet.</p>
-                </>
+                <p className="team-summary__meta">Season has not started yet.</p>
               )}
               {streakCopy ? <p className="team-summary__meta team-summary__meta--accent">{streakCopy}</p> : null}
-            </div>
-            <div className="team-summary__card">
-              <span className="team-summary__eyebrow">Coming Up</span>
-              {nextGameContent}
+            </TeamSummaryCard>
+            <TeamSummaryCard eyebrow={liveGame ? "Now Playing" : "Coming Up"}>
+              <MatchupCard
+                matchup={nextGame}
+                opponentMetrics={opponentMetrics}
+                opponentStandingProjected={opponentStanding?.projected_record ?? null}
+              />
               {upcomingStrengthCopy ? (
                 <p className="team-summary__meta">Avg opponent outlook: {upcomingStrengthCopy}</p>
               ) : null}
-            </div>
-            <div className="team-summary__card">
-              <span className="team-summary__eyebrow">Extremes</span>
-              <h3>Highs &amp; Lows</h3>
+            </TeamSummaryCard>
+            <TeamSummaryCard eyebrow="Extremes" title="Highs &amp; Lows">
               <p>
                 {biggestWin
                   ? `Biggest win: +${biggestWin.diff.toFixed(1)} vs ${biggestWin.opponent} (W${biggestWin.week})`
@@ -541,7 +458,7 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                   ? `Toughest loss: ${toughestLoss.diff.toFixed(1)} vs ${toughestLoss.opponent} (W${toughestLoss.week})`
                   : "No losses yet."}
               </p>
-            </div>
+            </TeamSummaryCard>
           </div>
         </section>
 

@@ -375,7 +375,17 @@ export function getTeamContext(
   const standing = context.standingsByTeamId.get(teamId) ?? null;
   const monteCarlo = context.monteCarloByTeamId.get(teamId) ?? null;
 
-  const nextMatchup = schedule.find((entry) => entry.week >= simulation.start_week) ?? schedule[0] ?? null;
+  // Prefer an in-progress game if one exists; otherwise the earliest non-final game.
+  // This ensures the team page shows the current week when it's underway,
+  // instead of jumping to the simulation's start_week (which may point to the next projection week).
+  const nextMatchup = (() => {
+    const nonFinal = schedule.filter((entry) => entry.status !== "final");
+    if (nonFinal.length === 0) {
+      return null;
+    }
+    const live = nonFinal.find((entry) => entry.status === "in_progress");
+    return live ?? nonFinal[0];
+  })();
 
   return {
     team,
