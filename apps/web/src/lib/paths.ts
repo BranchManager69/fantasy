@@ -62,3 +62,7 @@ export function seasonDir(season: string | number) {
 export function simulationSeasonDir(season: string | number) {
   return path.join(getSimulationsOutRoot(), String(season));
 }
+
+export function simulationHistorySeasonDir(season: string | number) {
+  return path.join(getHistoryRoot(), "simulations", String(season));
+}

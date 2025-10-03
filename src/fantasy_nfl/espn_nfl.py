@@ -8,7 +8,7 @@ from typing import Dict, Optional
 
 import httpx
 
-ESPN_NFL_SCOREBOARD_URL = "https://site.api.espn.com/apis/v2/sports/football/nfl/scoreboard"
+ESPN_NFL_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"
 GAME_DURATION_SECONDS = 60 * 60
 QUARTER_DURATION_SECONDS = 15 * 60
 

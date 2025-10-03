@@ -77,16 +77,22 @@ export function WeekCell({ entry, week }: WeekCellProps) {
     : formatMargin(entry.projected_margin);
 
   const winPct = Math.round(entry.win_probability * 100);
-
-  const resultLabel = isLive
-    ? "Live"
-    : entry.result === "win"
-      ? "Won"
-      : entry.result === "loss"
-        ? "Lost"
-        : entry.result === "tie"
-          ? "Tied"
-          : "Final";
+  const rawProbabilityDelta =
+    typeof entry.winProbabilityDelta === "number" ? entry.winProbabilityDelta : null;
+  const showProbabilityDelta = rawProbabilityDelta !== null && Math.abs(rawProbabilityDelta) >= 0.1;
+  const probabilityDeltaCopy = showProbabilityDelta
+    ? `${rawProbabilityDelta >= 0 ? "+" : ""}${Math.abs(rawProbabilityDelta) >= 1 ? rawProbabilityDelta.toFixed(0) : rawProbabilityDelta.toFixed(1)}`
+    : null;
+  const probabilityDeltaTrend = showProbabilityDelta
+    ? rawProbabilityDelta > 0
+      ? "up"
+      : "down"
+    : null;
+  const probabilityDeltaClass = probabilityDeltaTrend === "up"
+    ? "week-cell__probability-delta--up"
+    : probabilityDeltaTrend === "down"
+      ? "week-cell__probability-delta--down"
+      : "";
 
   const teamStarters = entry.teamProjection?.starters || [];
   const opponentStarters = entry.opponentProjection?.starters || [];
@@ -112,21 +118,21 @@ export function WeekCell({ entry, week }: WeekCellProps) {
         <div className="week-cell__details">
           <div className="week-cell__margin">{marginCopy}</div>
 
-          {isActual ? (
-            <div className={`week-cell__result ${isLive ? "week-cell__result--live" : "week-cell__result--final"}`}>
-              <span className="week-cell__result-label">{resultLabel}</span>
-              {isLive && (
-                <span className="week-cell__probability">{probabilityLabel(entry.win_probability)}</span>
-              )}
-            </div>
-          ) : (
-            <div className="week-cell__projection">
-              <span className="week-cell__probability">{probabilityLabel(entry.win_probability)}</span>
+          {!isFinal ? (
+            <div className="week-cell__probability-block">
+              <div className="week-cell__probability-row">
+                <span className="week-cell__probability-label">{probabilityLabel(entry.win_probability)}</span>
+                {probabilityDeltaCopy && probabilityDeltaTrend ? (
+                  <span className={`week-cell__probability-delta ${probabilityDeltaClass}`}>
+                    {probabilityDeltaTrend === "up" ? "▲" : "▼"} {probabilityDeltaCopy}
+                  </span>
+                ) : null}
+              </div>
               <div className="week-cell__prob-bar">
                 <span style={{ width: `${winPct}%` }} />
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         {(teamStarters.length > 0 || opponentStarters.length > 0) && (
@@ -142,20 +148,6 @@ export function WeekCell({ entry, week }: WeekCellProps) {
                 <span className="week-cell__lineup-label">vs</span>
                 <PlayerList players={opponentStarters} maxCount={2} />
               </div>
-            )}
-          </div>
-        )}
-
-        {entry.opponentStanding && (
-          <div className="week-cell__context">
-            <span className="week-cell__opponent-record">
-              {entry.opponentStanding.projected_record.wins}-{entry.opponentStanding.projected_record.losses}
-              {entry.opponentStanding.projected_record.ties > 0 && `-${entry.opponentStanding.projected_record.ties}`}
-            </span>
-            {entry.opponentMonteCarlo?.playoff_odds && entry.opponentMonteCarlo.playoff_odds > 0.05 && (
-              <span className="week-cell__opponent-odds">
-                {Math.round(entry.opponentMonteCarlo.playoff_odds * 100)}%
-              </span>
             )}
           </div>
         )}

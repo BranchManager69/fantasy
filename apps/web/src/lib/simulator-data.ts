@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
-import { simulationSeasonDir, getSimulationsOutRoot } from "@/lib/paths";
+import { simulationSeasonDir, getSimulationsOutRoot, simulationHistorySeasonDir } from "@/lib/paths";
 import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
 
 export type SimulationPlayer = {
@@ -151,6 +151,28 @@ function scenarioFilename(scenarioId?: string): string {
   return `rest_of_season__scenario-${scenarioSlug(scenarioId)}.json`;
 }
 
+function scenarioIdentifier(simulation: RestOfSeasonSimulation): string {
+  return simulation.scenario?.id ?? BASELINE_SCENARIO_ID;
+}
+
+function normalizeHistoryTimestamp(raw: string): string {
+  return raw.replace(/T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, (_, hh, mm, ss, ms) => `T${hh}:${mm}:${ss}.${ms}Z`);
+}
+
+function parseHistoryTimestamp(raw: string): number | null {
+  const normalized = normalizeHistoryTimestamp(raw);
+  const value = Date.parse(normalized);
+  return Number.isNaN(value) ? null : value;
+}
+
+const DEFAULT_DELTA_MAX_AGE_MS = 15 * 60 * 1000;
+
+type ScheduleDeltaContext = {
+  simulation: RestOfSeasonSimulation;
+  lookup: SimulationLookup;
+  maxAgeMs?: number;
+};
+
 async function listSimulationSeasons(): Promise<number[]> {
   const simRoot = getSimulationsOutRoot();
   const entries = await fs.readdir(simRoot, { withFileTypes: true }).catch(() => []);
@@ -198,6 +220,50 @@ export async function getLatestSimulation(
   return null;
 }
 
+export async function getPreviousSimulationSnapshot(
+  simulation: RestOfSeasonSimulation,
+  scenarioId?: string,
+): Promise<RestOfSeasonSimulation | null> {
+  const historyDir = simulationHistorySeasonDir(simulation.season);
+  const baseName = scenarioFilename(scenarioId).replace(/\.json$/i, "");
+  let entries: string[];
+  try {
+    entries = await fs.readdir(historyDir);
+  } catch {
+    return null;
+  }
+
+  const prefix = `${baseName}__`;
+  const candidates = entries
+    .filter((name) => name.startsWith(prefix) && name.endsWith(".json"))
+    .map((name) => {
+      const stamp = name.slice(prefix.length, -5);
+      const timestamp = parseHistoryTimestamp(stamp);
+      return { name, timestamp } as const;
+    })
+    .filter((entry): entry is { name: string; timestamp: number } => entry.timestamp !== null)
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const targetScenario = scenarioIdentifier(simulation);
+
+  for (const candidate of candidates) {
+    const filePath = path.join(historyDir, candidate.name);
+    const dataset = await readSimulationFile(filePath);
+    if (!dataset) {
+      continue;
+    }
+    if (dataset.generated_at === simulation.generated_at) {
+      continue;
+    }
+    if (scenarioIdentifier(dataset) !== targetScenario) {
+      continue;
+    }
+    return dataset;
+  }
+
+  return null;
+}
+
 export type SimulationLookup = {
   teamsById: Map<number, SimulationTeamMeta>;
   standingsByTeamId: Map<number, SimulationStanding>;
@@ -223,6 +289,7 @@ export type TeamScheduleWithContext = Omit<
   actualPoints: number | null;
   opponentActualPoints: number | null;
   status: "final" | "in_progress" | "scheduled" | "upcoming" | null;
+  winProbabilityDelta?: number | null;
 };
 
 export type TeamContext = {
@@ -290,11 +357,39 @@ export function getTeamSchedule(
   simulation: RestOfSeasonSimulation,
   teamId: number,
   lookup?: SimulationLookup,
+  deltaContext?: ScheduleDeltaContext,
 ): TeamScheduleWithContext[] {
   const context = lookup ?? buildSimulationLookup(simulation);
   const schedule = context.scheduleByTeamId.get(teamId);
   if (!schedule) {
     return [];
+  }
+
+  let previousIndex: Map<string, SimulationTeamScheduleEntry> | null = null;
+  if (deltaContext) {
+    const sameScenario =
+      scenarioIdentifier(simulation) === scenarioIdentifier(deltaContext.simulation);
+    const currentGeneratedAt = Date.parse(simulation.generated_at);
+    const previousGeneratedAt = Date.parse(deltaContext.simulation.generated_at);
+    const maxAge = deltaContext.maxAgeMs ?? DEFAULT_DELTA_MAX_AGE_MS;
+    const fresh =
+      sameScenario &&
+      Number.isFinite(currentGeneratedAt) &&
+      Number.isFinite(previousGeneratedAt) &&
+      currentGeneratedAt > previousGeneratedAt &&
+      currentGeneratedAt - previousGeneratedAt <= maxAge;
+
+    if (fresh) {
+      const previousSchedule = deltaContext.lookup.scheduleByTeamId.get(teamId);
+      if (previousSchedule) {
+        previousIndex = new Map(
+          previousSchedule.map((entry) => [
+            `${entry.week}::${entry.matchup_id}::${entry.is_home ? 1 : 0}`,
+            entry,
+          ]),
+        );
+      }
+    }
   }
 
   return schedule.map((entry) => {
@@ -356,6 +451,17 @@ export function getTeamSchedule(
       actualPoints,
       opponentActualPoints,
       status: normalizedStatus,
+      winProbabilityDelta:
+        previousIndex && normalizedStatus !== "scheduled"
+          ? (() => {
+              const key = `${entry.week}::${entry.matchup_id}::${entry.is_home ? 1 : 0}`;
+              const previous = previousIndex.get(key);
+              if (!previous) return null;
+              const delta = (entry.win_probability - previous.win_probability) * 100;
+              if (!Number.isFinite(delta)) return null;
+              return delta;
+            })()
+          : null,
     };
   });
 }

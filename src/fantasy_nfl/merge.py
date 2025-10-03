@@ -43,7 +43,7 @@ ESPN_STAT_CODE_MAP = {
     "rushing_yards": "24",
     "rushing_tds": "25",
     "rushing_two_point_conversion": "19",
-    "receptions": "41",
+    "receptions": "53",
     "receiving_yards": "42",
     "receiving_tds": "43",
     "receiving_two_point_conversion": "44",

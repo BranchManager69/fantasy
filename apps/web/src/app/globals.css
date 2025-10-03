@@ -811,17 +811,12 @@ a {
 
 .league-summary {
   display: grid;
-  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
   padding: 24px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: rgba(12, 21, 38, 0.78);
-}
-
-.league-summary__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
 }
 
 .league-summary__card {
@@ -1522,42 +1517,43 @@ a {
 .week-cell__margin {
   font-size: 0.78rem;
   color: var(--text-muted);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
-.week-cell__result {
+.week-cell__probability-block {
   display: grid;
-  gap: 4px;
+  gap: 6px;
 }
 
-.week-cell__result--final {
-  background: rgba(15, 24, 45, 0.7);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+.week-cell__probability-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.week-cell__result--live {
-  background: rgba(11, 28, 50, 0.7);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-}
-
-.week-cell__result-label {
+.week-cell__probability-label {
   font-size: 0.82rem;
   font-weight: 520;
   color: var(--text-soft);
 }
 
-.week-cell__projection {
-  display: grid;
+.week-cell__probability-delta {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
 }
 
-.week-cell__probability {
-  font-size: 0.82rem;
-  font-weight: 520;
-  color: var(--text-soft);
+.week-cell__probability-delta--up {
+  color: var(--accent-strong);
+}
+
+.week-cell__probability-delta--down {
+  color: var(--accent-warn);
 }
 
 .week-cell__prob-bar {
@@ -1619,26 +1615,6 @@ a {
   color: var(--text-muted);
   font-weight: 540;
   flex-shrink: 0;
-}
-
-.week-cell__context {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  padding-top: 4px;
-  border-top: 1px solid rgba(148, 163, 184, 0.12);
-}
-
-.week-cell__opponent-record {
-  font-weight: 540;
-}
-
-.week-cell__opponent-odds {
-  color: var(--accent);
-  font-weight: 560;
 }
 
 .legend {
@@ -1733,5 +1709,136 @@ a {
 
   .matrix-header h2 {
     font-size: 1.6rem;
+  }
+}
+
+.power-rankings {
+  display: grid;
+  gap: 20px;
+  padding: 32px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: rgba(14, 21, 39, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.power-rankings__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.power-rankings__header h2 {
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.power-rankings__subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.power-rankings__list {
+  display: grid;
+  gap: 8px;
+}
+
+.power-rankings__item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: var(--radius-md);
+  background: rgba(15, 23, 42, 0.5);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.power-rankings__item:hover {
+  background: rgba(20, 30, 55, 0.72);
+  border-color: rgba(96, 165, 250, 0.4);
+  transform: translateX(4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.power-rankings__rank {
+  font-size: 1.1rem;
+  font-weight: 650;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.power-rankings__team {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.power-rankings__avatars {
+  flex-shrink: 0;
+}
+
+.power-rankings__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.power-rankings__name {
+  font-size: 1rem;
+  font-weight: 560;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.power-rankings__owners {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.power-rankings__ppg {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-strong);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 720px) {
+  .power-rankings {
+    padding: 24px;
+  }
+
+  .power-rankings__item {
+    grid-template-columns: 32px 1fr auto;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .power-rankings__rank {
+    font-size: 0.95rem;
+  }
+
+  .power-rankings__name {
+    font-size: 0.92rem;
+  }
+
+  .power-rankings__ppg {
+    font-size: 1.1rem;
   }
 }

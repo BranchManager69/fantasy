@@ -651,17 +651,18 @@ class RestOfSeasonSimulator:
 
         # Load actuals (scoreboard if available)
         scores_df = self._load_week_scores(season, week)
-        # Merge by player id
-        merged = proj_df.merge(
-            scores_df[["espn_player_id", "score_total"]] if not scores_df.empty else pd.DataFrame(columns=["espn_player_id", "score_total"]),
-            on="espn_player_id",
-            how="left",
-        )
+        if not scores_df.empty:
+            scores_df = scores_df.rename(columns={"score_total": "live_score_total"})
+            score_join = scores_df[["espn_player_id", "live_score_total"]]
+        else:
+            score_join = pd.DataFrame(columns=["espn_player_id", "live_score_total"])
+
+        merged = proj_df.merge(score_join, on="espn_player_id", how="left")
 
         pro_team_map = self._load_player_to_pro_team_map(season)
 
         def _calc(row: pd.Series) -> float:
-            actual_pts = float(row.get("score_total", 0.0) or 0.0)
+            actual_pts = float(row.get("live_score_total", 0.0) or 0.0)
             original_proj = float(row.get("projected_points", 0.0) or 0.0)
             player_id = row.get("espn_player_id")
             pro_team_id = None
@@ -827,8 +828,22 @@ class RestOfSeasonSimulator:
                         home_proj.projected_points = round(home_points, 2)
                         away_proj.projected_points = round(away_points, 2)
                     else:
-                        home_proj.projected_points = round(home_live_total, 2)
-                        away_proj.projected_points = round(away_live_total, 2)
+                        home_live_projection = team_live.get(home_team_id)
+                        away_live_projection = team_live.get(away_team_id)
+
+                        if home_live_projection is not None:
+                            home_proj.projected_points = round(home_live_projection.projected_points, 2)
+                            home_proj.starters = [dict(player) for player in home_live_projection.starters]
+                            home_proj.bench = [dict(player) for player in home_live_projection.bench]
+                        else:
+                            home_proj.projected_points = round(home_live_total, 2)
+
+                        if away_live_projection is not None:
+                            away_proj.projected_points = round(away_live_projection.projected_points, 2)
+                            away_proj.starters = [dict(player) for player in away_live_projection.starters]
+                            away_proj.bench = [dict(player) for player in away_live_projection.bench]
+                        else:
+                            away_proj.projected_points = round(away_live_total, 2)
 
                     if is_final:
                         standings_tracker[home_team_id]["points"] += home_points
