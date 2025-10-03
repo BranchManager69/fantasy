@@ -81,7 +81,9 @@ export default async function Home({
   return (
     <main className="shell">
       <AppNav />
-      <section className="panel matrix-panel">
+      <section
+        className="grid gap-7 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-[clamp(32px,4vw,40px)] shadow-[0_22px_60px_rgba(2,6,23,0.55)] backdrop-blur-[18px]"
+      >
         <SimulationHeader
           season={simulation.season}
           firstWeek={firstWeek}
@@ -106,7 +108,11 @@ export default async function Home({
 
         <PowerRankings rankings={powerRankings} />
 
-        <SimulationMatrix weeks={weeks} teamContexts={teamContexts} />
+        <SimulationMatrix
+          weeks={weeks}
+          teamContexts={teamContexts}
+          scenarioId={activeScenarioId !== BASELINE_SCENARIO_ID ? activeScenarioId : undefined}
+        />
 
         <SimulationLegend />
       </section>

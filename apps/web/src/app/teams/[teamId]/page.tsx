@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -51,6 +52,10 @@ const STARTER_SLOT_ORDER: Record<string, number> = {
   DST: 8,
   K: 9,
 };
+
+const PLAYER_SLOT_CLASS = "text-[0.78rem] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]";
+const PLAYER_NAME_CLASS = "text-[0.92rem] text-[var(--text-soft)]";
+const PLAYER_POINTS_CLASS = "text-sm text-[var(--text-muted)]";
 
 function slotRank(slot: string | null | undefined): number {
   if (!slot) return 50;
@@ -321,8 +326,8 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           ← Back to league dashboard
         </Link>
       </nav>
-      <article className="panel team-panel">
-        <div className="panel-actions">
+      <article className="grid gap-8 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-[clamp(32px,4vw,40px)] shadow-[0_22px_60px_rgba(2,6,23,0.55)] backdrop-blur-[18px]">
+        <div className="mb-5 flex flex-wrap items-end justify-end gap-4">
           <ScenarioSwitcher scenarios={scenarios} activeScenarioId={activeScenarioId} />
           <RefreshControls
             initialGeneratedAt={simulation.generated_at}
@@ -330,9 +335,9 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           />
         </div>
 
-        <header className="team-hero">
-          <div className="team-hero__identity">
-            <div className="team-hero__logo">
+        <header className="flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="grid h-24 w-24 place-items-center rounded-[20px] border border-[var(--border)] bg-[rgba(15,23,42,0.7)] text-[1.6rem] font-semibold text-[var(--text-soft)]">
               {team.logo_url ? (
                 <Image
                   src={team.logo_url}
@@ -346,96 +351,101 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 <span aria-hidden>{team.abbrev ?? team.name.slice(0, 2).toUpperCase()}</span>
               )}
             </div>
-            <div className="team-hero__meta">
-              <h1>{team.name}</h1>
-              <p className="team-hero__owners">{formatOwners(team.owners)}</p>
+            <div className="space-y-2">
+              <h1 className="text-[clamp(2.2rem,4vw,3rem)] font-semibold">{team.name}</h1>
+              <p className="text-[0.95rem] text-[var(--text-muted)]">{formatOwners(team.owners)}</p>
             </div>
           </div>
-          <div className="team-hero__stats">
+          <div className="grid gap-4 text-sm sm:text-base xl:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
             <div>
-              <span className="team-hero__label">Current Record</span>
-              <span className="team-hero__value">{formatSimpleRecord({ wins: teamMetrics.wins, losses: teamMetrics.losses, ties: teamMetrics.ties })}</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Current Record</span>
+              <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{formatSimpleRecord({ wins: teamMetrics.wins, losses: teamMetrics.losses, ties: teamMetrics.ties })}</span>
             </div>
             <div>
-              <span className="team-hero__label">Points For</span>
-              <span className="team-hero__value">{pointsFor.toFixed(1)}</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Points For</span>
+              <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{pointsFor.toFixed(1)}</span>
             </div>
             <div>
-              <span className="team-hero__label">Points Against</span>
-              <span className="team-hero__value">{pointsAgainst.toFixed(1)}</span>
+              <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Points Against</span>
+              <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{pointsAgainst.toFixed(1)}</span>
             </div>
             <div>
-              <span className="team-hero__label">Point Differential</span>
-              <span className={`team-hero__value ${pointDifferential >= 0 ? "team-hero__value--accent" : "team-hero__value--warn"}`}>
+              <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Point Differential</span>
+              <span
+                className={clsx(
+                  "block text-[1.1rem] font-semibold",
+                  pointDifferential >= 0 ? "text-[var(--accent-strong)]" : "text-[var(--accent-warn)]",
+                )}
+              >
                 {pointDifferential >= 0 ? "+" : ""}{pointDifferential.toFixed(1)}
               </span>
             </div>
             {standing ? (
               <div>
-                <span className="team-hero__label">Projected Record</span>
-                <span className="team-hero__value">{formatSimpleRecord(standing.projected_record)}</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Projected Record</span>
+                <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{formatSimpleRecord(standing.projected_record)}</span>
               </div>
             ) : null}
             {standing ? (
               <div>
-                <span className="team-hero__label">Projected Points</span>
-                <span className="team-hero__value">{standing.projected_points.toFixed(0)}</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Projected Points</span>
+                <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{standing.projected_points.toFixed(0)}</span>
               </div>
             ) : null}
             {playoffOdds ? (
               <div>
-                <span className="team-hero__label">Playoff Odds</span>
-                <span className="team-hero__value team-hero__value--accent">{playoffOdds}</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Playoff Odds</span>
+                <span className="block text-[1.1rem] font-semibold text-[var(--accent-strong)]">{playoffOdds}</span>
               </div>
             ) : null}
             {topSeedOdds ? (
               <div>
-                <span className="team-hero__label">#1 Seed Odds</span>
-                <span className="team-hero__value">{topSeedOdds}</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">#1 Seed Odds</span>
+                <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{topSeedOdds}</span>
               </div>
             ) : null}
             {bestSeedCopy ? (
               <div>
-                <span className="team-hero__label">Ceiling</span>
-                <span className="team-hero__value">{bestSeedCopy}</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">Ceiling</span>
+                <span className="block text-[1.1rem] font-semibold text-[var(--text-soft)]">{bestSeedCopy}</span>
               </div>
             ) : null}
           </div>
         </header>
 
-        <section className="team-summary">
-          <header>
-            <h2>Season Snapshot</h2>
+        <section className="grid gap-5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[rgba(13,20,36,0.78)] p-6">
+          <header className="flex flex-wrap items-center justify-between gap-3 text-sm text-[var(--text-muted)]">
+            <h2 className="text-lg font-semibold text-[var(--text-soft)]">Season Snapshot</h2>
             <span>{schedule.length} weeks · {remainingGames} games remaining</span>
           </header>
-          <div className="team-summary__grid">
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
             <TeamSummaryCard eyebrow="Efficiency" title="Per-Game Production">
-              <p>{pointsPerGame !== null ? `${pointsPerGame.toFixed(1)} PF · ${opponentPointsPerGame?.toFixed(1) ?? "—"} PA` : "—"}</p>
-              <p className="team-summary__meta">
+              <p className="text-[0.95rem] text-[var(--text-soft)]">{pointsPerGame !== null ? `${pointsPerGame.toFixed(1)} PF · ${opponentPointsPerGame?.toFixed(1) ?? "—"} PA` : "—"}</p>
+              <p className="text-sm text-[var(--text-muted)]">
                 Avg margin {averageMargin !== null ? `${averageMargin >= 0 ? "+" : ""}${averageMargin.toFixed(1)} pts` : "—"}
               </p>
             </TeamSummaryCard>
             <TeamSummaryCard eyebrow="Momentum" title={liveGame ? `Week ${liveGame.week} • Live` : lastGame ? `Week ${lastGame.week} ${lastGame.result === "win" ? "Win" : lastGame.result === "loss" ? "Loss" : "Tie"}` : "Last Result"}>
               {liveGame ? (
                 <>
-                  <p>
+                  <p className="text-[0.95rem] text-[var(--text-soft)]">
                     {(liveGame.actualPoints ?? liveGame.projected_points).toFixed(1)} –
                     {(liveGame.opponentActualPoints ?? liveGame.opponent_projected_points).toFixed(1)}
                   </p>
-                  <p className="team-summary__meta">{formatActualMargin(liveGame.actualPoints, liveGame.opponentActualPoints, liveGame.status)}</p>
+                  <p className="text-sm text-[var(--text-muted)]">{formatActualMargin(liveGame.actualPoints, liveGame.opponentActualPoints, liveGame.status)}</p>
                 </>
               ) : lastGame ? (
                 <>
-                  <p>
+                  <p className="text-[0.95rem] text-[var(--text-soft)]">
                     {(lastGame.actualPoints ?? lastGame.projected_points).toFixed(1)} –
                     {(lastGame.opponentActualPoints ?? lastGame.opponent_projected_points).toFixed(1)}
                   </p>
-                  <p className="team-summary__meta">{formatActualMargin(lastGame.actualPoints, lastGame.opponentActualPoints, lastGame.status)}</p>
+                  <p className="text-sm text-[var(--text-muted)]">{formatActualMargin(lastGame.actualPoints, lastGame.opponentActualPoints, lastGame.status)}</p>
                 </>
               ) : (
-                <p className="team-summary__meta">Season has not started yet.</p>
+                <p className="text-sm text-[var(--text-muted)]">Season has not started yet.</p>
               )}
-              {streakCopy ? <p className="team-summary__meta team-summary__meta--accent">{streakCopy}</p> : null}
+              {streakCopy ? <p className="text-sm font-semibold text-[var(--accent)]">{streakCopy}</p> : null}
             </TeamSummaryCard>
             <TeamSummaryCard eyebrow={liveGame ? "Now Playing" : "Coming Up"}>
               <MatchupCard
@@ -444,16 +454,16 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
                 opponentStandingProjected={opponentStanding?.projected_record ?? null}
               />
               {upcomingStrengthCopy ? (
-                <p className="team-summary__meta">Avg opponent outlook: {upcomingStrengthCopy}</p>
+                <p className="text-sm text-[var(--text-muted)]">Avg opponent outlook: {upcomingStrengthCopy}</p>
               ) : null}
             </TeamSummaryCard>
             <TeamSummaryCard eyebrow="Extremes" title="Highs &amp; Lows">
-              <p>
+              <p className="text-[0.95rem] text-[var(--text-soft)]">
                 {biggestWin
                   ? `Biggest win: +${biggestWin.diff.toFixed(1)} vs ${biggestWin.opponent} (W${biggestWin.week})`
                   : "No wins yet."}
               </p>
-              <p className="team-summary__meta">
+              <p className="text-sm text-[var(--text-muted)]">
                 {toughestLoss
                   ? `Toughest loss: ${toughestLoss.diff.toFixed(1)} vs ${toughestLoss.opponent} (W${toughestLoss.week})`
                   : "No losses yet."}
@@ -462,83 +472,92 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
           </div>
         </section>
 
-        <section className="team-roster">
-          <header>
-            <h2>Lineup Outlook</h2>
+        <section className="grid gap-5">
+          <header className="flex flex-wrap items-baseline justify-between gap-3 text-sm text-[var(--text-muted)]">
+            <h2 className="text-lg font-semibold text-[var(--text-soft)]">Lineup Outlook</h2>
             {nextGame ? <span>Week {nextGame.week} matchup</span> : <span>Roster preview</span>}
           </header>
           {nextGame ? (
             <>
-              <div className="team-roster__metrics">
-                <div>
-                  <span className="team-roster__metrics-label">Your season</span>
-                  <span className="team-roster__metrics-value">{formatSimpleRecord({ wins: teamMetrics.wins, losses: teamMetrics.losses, ties: teamMetrics.ties })}</span>
-                  <span className="team-roster__metrics-sub">PPG {pointsPerGame !== null ? pointsPerGame.toFixed(1) : "—"} · Diff {pointDifferential >= 0 ? '+' : ''}{pointDifferential.toFixed(1)}</span>
+              <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
+                <div className="grid gap-2 rounded-[var(--radius-sm)] border border-[rgba(148,163,184,0.2)] bg-[rgba(10,18,32,0.72)] px-[14px] py-3">
+                  <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Your season</span>
+                  <span className="text-[1.05rem] font-semibold text-[var(--text-soft)]">{formatSimpleRecord({ wins: teamMetrics.wins, losses: teamMetrics.losses, ties: teamMetrics.ties })}</span>
+                  <span className="text-sm text-[var(--text-muted)]">PPG {pointsPerGame !== null ? pointsPerGame.toFixed(1) : "—"} · Diff {pointDifferential >= 0 ? '+' : ''}{pointDifferential.toFixed(1)}</span>
                 </div>
                 {opponentMetrics ? (
-                  <div>
-                    <span className="team-roster__metrics-label">Opponent season</span>
-                    <span className="team-roster__metrics-value">{formatSimpleRecord({ wins: opponentMetrics.wins, losses: opponentMetrics.losses, ties: opponentMetrics.ties })}</span>
-                    <span className="team-roster__metrics-sub">PPG {opponentMetrics.pointsPerGame !== null ? opponentMetrics.pointsPerGame.toFixed(1) : opponentMetrics.pointsFor.toFixed(1)} · Diff {opponentMetrics.pointDifferential >= 0 ? '+' : ''}{opponentMetrics.pointDifferential.toFixed(1)}</span>
+                  <div className="grid gap-2 rounded-[var(--radius-sm)] border border-[rgba(148,163,184,0.2)] bg-[rgba(10,18,32,0.72)] px-[14px] py-3">
+                    <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Opponent season</span>
+                    <span className="text-[1.05rem] font-semibold text-[var(--text-soft)]">{formatSimpleRecord({ wins: opponentMetrics.wins, losses: opponentMetrics.losses, ties: opponentMetrics.ties })}</span>
+                    <span className="text-sm text-[var(--text-muted)]">PPG {opponentMetrics.pointsPerGame !== null ? opponentMetrics.pointsPerGame.toFixed(1) : opponentMetrics.pointsFor.toFixed(1)} · Diff {opponentMetrics.pointDifferential >= 0 ? '+' : ''}{opponentMetrics.pointDifferential.toFixed(1)}</span>
                     {opponentStanding ? (
-                      <span className="team-roster__metrics-sub">Projected {formatSimpleRecord(opponentStanding.projected_record)}</span>
+                      <span className="text-sm text-[var(--text-muted)]">Projected {formatSimpleRecord(opponentStanding.projected_record)}</span>
                     ) : null}
                   </div>
                 ) : null}
               </div>
-              <div className="team-roster__grid">
-              <div>
-                <h3>Starters</h3>
-                <ul>
-                  {starters.length === 0 ? (
-                    <li className="team-roster__empty">No starters projected.</li>
-                  ) : (
-                    starters.map((player) => (
-                      <li key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}>
-                        <span className="player-slot">{player.lineup_slot}</span>
-                        <span className="player-name">{player.player_name}</span>
-                        <span className="player-points">{player.projected_points.toFixed(1)} pts</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
+              <div className="grid gap-5 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[rgba(13,22,40,0.7)] p-5 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-[var(--text-soft)]">Starters</h3>
+                  <ul className="grid gap-2">
+                    {starters.length === 0 ? (
+                      <li className="text-sm text-[var(--text-muted)]">No starters projected.</li>
+                    ) : (
+                      starters.map((player) => (
+                        <li
+                          key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}
+                          className="grid grid-cols-[60px,1fr,auto] items-center gap-3 rounded-[10px] border border-[rgba(255,255,255,0.06)] bg-[rgba(9,15,28,0.65)] px-3 py-2 text-[0.95rem]"
+                        >
+                          <span className={PLAYER_SLOT_CLASS}>{player.lineup_slot}</span>
+                          <span className={PLAYER_NAME_CLASS}>{player.player_name}</span>
+                          <span className={PLAYER_POINTS_CLASS}>{player.projected_points.toFixed(1)} pts</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-[var(--text-soft)]">Bench</h3>
+                  <ul className="grid gap-2">
+                    {bench.length === 0 ? (
+                      <li className="text-sm text-[var(--text-muted)]">Bench not available.</li>
+                    ) : (
+                      bench.map((player) => (
+                        <li
+                          key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}
+                          className="grid grid-cols-[60px,1fr,auto] items-center gap-3 rounded-[10px] border border-[rgba(255,255,255,0.06)] bg-[rgba(9,15,28,0.65)] px-3 py-2 text-[0.95rem]"
+                        >
+                          <span className={PLAYER_SLOT_CLASS}>{player.lineup_slot}</span>
+                          <span className={PLAYER_NAME_CLASS}>{player.player_name}</span>
+                          <span className={PLAYER_POINTS_CLASS}>{player.projected_points.toFixed(1)} pts</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-[var(--text-soft)]">Opponent Starters</h3>
+                  <ul className="grid gap-2">
+                    {opponentStarters.length === 0 ? (
+                      <li className="text-sm text-[var(--text-muted)]">Opponent lineup not available.</li>
+                    ) : (
+                      opponentStarters.map((player) => (
+                        <li
+                          key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}
+                          className="grid grid-cols-[60px,1fr,auto] items-center gap-3 rounded-[10px] border border-[rgba(255,255,255,0.06)] bg-[rgba(9,15,28,0.65)] px-3 py-2 text-[0.95rem]"
+                        >
+                          <span className={PLAYER_SLOT_CLASS}>{player.lineup_slot}</span>
+                          <span className={PLAYER_NAME_CLASS}>{player.player_name}</span>
+                          <span className={PLAYER_POINTS_CLASS}>{player.projected_points.toFixed(1)} pts</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
               </div>
-              <div>
-                <h3>Bench</h3>
-                <ul>
-                  {bench.length === 0 ? (
-                    <li className="team-roster__empty">Bench not available.</li>
-                  ) : (
-                    bench.map((player) => (
-                      <li key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}>
-                        <span className="player-slot">{player.lineup_slot}</span>
-                        <span className="player-name">{player.player_name}</span>
-                        <span className="player-points">{player.projected_points.toFixed(1)} pts</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-              <div>
-                <h3>Opponent Starters</h3>
-                <ul>
-                  {opponentStarters.length === 0 ? (
-                    <li className="team-roster__empty">Opponent lineup not available.</li>
-                  ) : (
-                    opponentStarters.map((player) => (
-                      <li key={`${player.espn_player_id ?? player.player_name}-${player.lineup_slot}`}>
-                        <span className="player-slot">{player.lineup_slot}</span>
-                        <span className="player-name">{player.player_name}</span>
-                        <span className="player-points">{player.projected_points.toFixed(1)} pts</span>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              </div>
-            </div>
-          </>
+            </>
           ) : (
-            <p className="team-roster__empty">Lineup information becomes available once projections are published.</p>
+            <p className="text-sm text-[var(--text-muted)]">Lineup information becomes available once projections are published.</p>
           )}
         </section>
 

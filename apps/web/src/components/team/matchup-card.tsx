@@ -22,7 +22,7 @@ export function MatchupCard({ title, matchup, opponentMetrics, opponentStandingP
     return (
       <>
         <h3>No games remaining</h3>
-        <p className="team-summary__meta">Regular season complete.</p>
+        <p className="text-sm text-[var(--text-muted)]">Regular season complete.</p>
       </>
     );
   }
@@ -33,7 +33,7 @@ export function MatchupCard({ title, matchup, opponentMetrics, opponentStandingP
   const labelPrefix = isLive ? "Live" : isFinal ? "Final" : "Upcoming";
 
   const heading = (
-    <h3>
+    <h3 className="text-[1.05rem] font-semibold text-[var(--text-soft)]">
       Week {matchup.week} • {labelPrefix} {matchup.is_home ? "vs" : "@"}{" "}
       {matchup.opponent ? (
         <Link href={`/teams/${matchup.opponent.team_id}`}>{matchup.opponent.name}</Link>
@@ -57,8 +57,8 @@ export function MatchupCard({ title, matchup, opponentMetrics, opponentStandingP
     })();
     body = (
       <>
-        <p>{forPts} – {againstPts}</p>
-        <p className="team-summary__meta">{liveDiff ?? ""} • {probabilityLabel(matchup.win_probability)}</p>
+        <p className="text-[0.95rem] text-[var(--text-soft)]">{forPts} – {againstPts}</p>
+        <p className="text-sm text-[var(--text-muted)]">{liveDiff ?? ""} • {probabilityLabel(matchup.win_probability)}</p>
       </>
     );
   } else if (isFinal) {
@@ -74,27 +74,27 @@ export function MatchupCard({ title, matchup, opponentMetrics, opponentStandingP
     })();
     body = (
       <>
-        <p>{forPts} – {againstPts}</p>
-        <p className="team-summary__meta">{diff ?? ""}</p>
+        <p className="text-[0.95rem] text-[var(--text-soft)]">{forPts} – {againstPts}</p>
+        <p className="text-sm text-[var(--text-muted)]">{diff ?? ""}</p>
       </>
     );
   } else {
     body = (
       <>
-        <p>{matchup.projected_points.toFixed(1)} – {matchup.opponent_projected_points.toFixed(1)}</p>
-        <p className="team-summary__meta">{probabilityLabel(matchup.win_probability)} · {formatMargin(matchup.projected_margin)}</p>
+        <p className="text-[0.95rem] text-[var(--text-soft)]">{matchup.projected_points.toFixed(1)} – {matchup.opponent_projected_points.toFixed(1)}</p>
+        <p className="text-sm text-[var(--text-muted)]">{probabilityLabel(matchup.win_probability)} · {formatMargin(matchup.projected_margin)}</p>
       </>
     );
   }
 
   return (
     <>
-      {title ? <span className="team-summary__eyebrow">{title}</span> : null}
+      {title ? <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">{title}</span> : null}
       {heading}
       {body}
       {opponentMetrics ? (
         <>
-          <p className="team-summary__meta">
+          <p className="text-sm text-[var(--text-muted)]">
             Opponent record {formatSimpleRecord({
               wins: opponentMetrics.wins,
               losses: opponentMetrics.losses,
@@ -105,13 +105,12 @@ export function MatchupCard({ title, matchup, opponentMetrics, opponentStandingP
               : ` · ${opponentMetrics.pointsFor.toFixed(1)} PF`}
           </p>
           {opponentStandingProjected ? (
-            <p className="team-summary__meta">Projected {formatSimpleRecord(opponentStandingProjected)}</p>
+            <p className="text-sm text-[var(--text-muted)]">Projected {formatSimpleRecord(opponentStandingProjected)}</p>
           ) : null}
         </>
       ) : null}
     </>
   );
 }
-
 
 

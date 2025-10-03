@@ -60,14 +60,12 @@ function DiffList<T extends CompletedWeekDiff | ProjectionWeekDiffEntry>({
   render: (item: T) => ReactNode;
 }) {
   return (
-    <section className="scenario-drawer__section">
-      <header>
-        <h3>{title}</h3>
-      </header>
+    <section className="grid gap-3">
+      <h3 className="text-lg font-semibold text-[var(--text-soft)]">{title}</h3>
       {items.length === 0 ? (
-        <p className="scenario-drawer__empty">{emptyCopy}</p>
+        <p className="text-sm text-[var(--text-muted)]">{emptyCopy}</p>
       ) : (
-        <ul className="scenario-drawer__list">
+        <ul className="grid gap-3" role="list">
           {items.map((item) => (
             <li key={`${item.week}-${item.matchupId}`}>{render(item)}</li>
           ))}
@@ -84,27 +82,27 @@ function renderCompletedDiff(item: CompletedWeekDiff) {
   const awayDelta = formatDelta(item.away.delta);
 
   return (
-    <article className="scenario-drawer__diff-card">
-      <header>
-        <span className="scenario-drawer__diff-week">Week {item.week}</span>
-        <span className="scenario-drawer__diff-matchup">{item.home.teamName} vs {item.away.teamName}</span>
+    <article className="grid gap-4 rounded-[var(--radius-md)] border border-[rgba(148,163,184,0.2)] bg-[rgba(13,23,44,0.72)] p-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 text-sm text-[var(--text-muted)]">
+        <span className="text-xs uppercase tracking-[0.16em]">Week {item.week}</span>
+        <span className="text-sm text-[var(--text-soft)]">{item.home.teamName} vs {item.away.teamName}</span>
       </header>
-      <div className="scenario-drawer__diff-grid">
-        <div>
-          <span className="scenario-drawer__diff-label">Baseline</span>
-          <span className="scenario-drawer__diff-value">
+      <div className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+        <div className="grid gap-1">
+          <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">Baseline</span>
+          <span className="text-[1rem] font-semibold text-[var(--text-soft)]">
             {formatScore(item.home.baselineScore)} – {formatScore(item.away.baselineScore)}
           </span>
-          {baselineWinner ? <span className="scenario-drawer__diff-note">{baselineWinner}</span> : null}
+          {baselineWinner ? <span className="text-sm text-[var(--text-muted)]">{baselineWinner}</span> : null}
         </div>
-        <div>
-          <span className="scenario-drawer__diff-label">Scenario</span>
-          <span className="scenario-drawer__diff-value scenario-drawer__diff-value--accent">
+        <div className="grid gap-1">
+          <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">Scenario</span>
+          <span className="text-[1rem] font-semibold text-[var(--accent)]">
             {formatScore(item.home.scenarioScore)} – {formatScore(item.away.scenarioScore)}
           </span>
-          {scenarioWinner ? <span className="scenario-drawer__diff-note">{scenarioWinner}</span> : null}
+          {scenarioWinner ? <span className="text-sm text-[var(--text-muted)]">{scenarioWinner}</span> : null}
         </div>
-        <div className="scenario-drawer__diff-delta">
+        <div className="grid gap-1 text-sm text-[var(--text-muted)]">
           {homeDelta ? <span>{item.home.teamName}: {homeDelta}</span> : null}
           {awayDelta ? <span>{item.away.teamName}: {awayDelta}</span> : null}
         </div>
@@ -118,25 +116,25 @@ function renderProjectionDiff(item: ProjectionWeekDiffEntry) {
   const awayDelta = formatDelta(item.away.delta);
 
   return (
-    <article className="scenario-drawer__diff-card">
-      <header>
-        <span className="scenario-drawer__diff-week">Week {item.week}</span>
-        <span className="scenario-drawer__diff-matchup">{item.home.teamName} vs {item.away.teamName}</span>
+    <article className="grid gap-4 rounded-[var(--radius-md)] border border-[rgba(148,163,184,0.2)] bg-[rgba(13,23,44,0.72)] p-5">
+      <header className="flex flex-wrap items-baseline justify-between gap-3 text-sm text-[var(--text-muted)]">
+        <span className="text-xs uppercase tracking-[0.16em]">Week {item.week}</span>
+        <span className="text-sm text-[var(--text-soft)]">{item.home.teamName} vs {item.away.teamName}</span>
       </header>
-      <div className="scenario-drawer__diff-grid">
-        <div>
-          <span className="scenario-drawer__diff-label">Baseline</span>
-          <span className="scenario-drawer__diff-value">
+      <div className="grid gap-4 md:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+        <div className="grid gap-1">
+          <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">Baseline</span>
+          <span className="text-[1rem] font-semibold text-[var(--text-soft)]">
             {formatScore(item.home.baselineScore)} – {formatScore(item.away.baselineScore)}
           </span>
         </div>
-        <div>
-          <span className="scenario-drawer__diff-label">Scenario</span>
-          <span className="scenario-drawer__diff-value scenario-drawer__diff-value--accent">
+        <div className="grid gap-1">
+          <span className="text-[0.72rem] uppercase tracking-[0.16em] text-[var(--text-muted)]">Scenario</span>
+          <span className="text-[1rem] font-semibold text-[var(--accent)]">
             {formatScore(item.home.scenarioScore)} – {formatScore(item.away.scenarioScore)}
           </span>
         </div>
-        <div className="scenario-drawer__diff-delta">
+        <div className="grid gap-1 text-sm text-[var(--text-muted)]">
           {homeDelta ? <span>{item.home.teamName}: {homeDelta}</span> : null}
           {awayDelta ? <span>{item.away.teamName}: {awayDelta}</span> : null}
         </div>
@@ -197,19 +195,21 @@ export function ScenarioDrawer({ season, scenarios, activeScenarioId }: Props) {
   const projectionOverrideCount = detail?.diff.projectionWeeks.length ?? overrides.projectionWeeks.length;
 
   return (
-    <section className="scenario-drawer">
-      <header className="scenario-drawer__header">
-        <div>
-          <span className="scenario-drawer__eyebrow">Scenario</span>
-          <h2>{scenarioLabel}</h2>
-          {activeScenario.description ? <p className="scenario-drawer__description">{activeScenario.description}</p> : null}
+    <section className="grid gap-6 rounded-[var(--radius-md)] border border-[var(--border-subtle)] bg-[rgba(15,24,45,0.7)] p-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <span className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">Scenario</span>
+          <h2 className="text-xl font-semibold text-[var(--text-soft)]">{scenarioLabel}</h2>
+          {activeScenario.description ? (
+            <p className="text-sm text-[var(--text-muted)]">{activeScenario.description}</p>
+          ) : null}
         </div>
-        <div className="scenario-drawer__meta">
+        <div className="flex flex-wrap justify-end gap-3 text-sm text-[var(--text-muted)]">
           <span>Season {season}</span>
-          <span>{overrides.completedWeeks.length} completed-week overrides</span>
+          <span>{overrides.completedWeeks.length} completed overrides</span>
           <span>{overrides.projectionWeeks.length} projection overrides</span>
           {detail?.simulationGeneratedAt ? (
-            <span>Sim generated {formatTimestamp(detail.simulationGeneratedAt)}</span>
+            <span>Sim {formatTimestamp(detail.simulationGeneratedAt)}</span>
           ) : null}
           {hasOverlay && detail?.scenario.updatedAt ? (
             <span>Edited {formatTimestamp(detail.scenario.updatedAt)}</span>
@@ -217,26 +217,35 @@ export function ScenarioDrawer({ season, scenarios, activeScenarioId }: Props) {
         </div>
       </header>
 
-      {loading ? <p className="scenario-drawer__status">Loading scenario details…</p> : null}
-      {error ? <p className="scenario-drawer__status scenario-drawer__status--error">{error}</p> : null}
+      {loading ? <p className="text-sm text-[var(--text-muted)]">Loading scenario details…</p> : null}
+      {error ? <p className="text-sm text-[#fca5a5]">{error}</p> : null}
 
       {!loading && !error && detail ? (
-        <div className="scenario-drawer__body">
+        <div className="grid gap-6">
           {activeScenario.id === BASELINE_SCENARIO_ID ? (
-            <p className="scenario-drawer__empty">Baseline dataset – no overlays applied.</p>
+            <p className="text-sm text-[var(--text-muted)]">Baseline dataset – no overlays applied.</p>
           ) : null}
 
           {!detail.hasSimulation && activeScenario.id !== BASELINE_SCENARIO_ID ? (
-            <div className="scenario-drawer__callout">
-              <strong>Simulation not yet generated.</strong>
-              <span>Run <code>poetry run fantasy sim rest-of-season --season {season} --scenario {activeScenario.id}</code> to view diffs.</span>
+            <div className="grid gap-2 rounded-[var(--radius-sm)] border border-[rgba(148,163,184,0.25)] bg-[rgba(10,18,32,0.78)] p-4 text-sm text-[var(--text-muted)]">
+              <strong className="text-[var(--text-soft)]">Simulation not yet generated.</strong>
+              <span>
+                Run <code className="rounded bg-[rgba(15,24,45,0.9)] px-2 py-1 text-[var(--text-soft)]">poetry run fantasy sim rest-of-season --season {season} --scenario {activeScenario.id}</code> to
+                view diffs.
+              </span>
             </div>
           ) : null}
 
-          <div className="scenario-drawer__chips">
-            <span className="scenario-drawer__chip">Completed overrides: {completedOverrideCount}</span>
-            <span className="scenario-drawer__chip">Projection overrides: {projectionOverrideCount}</span>
-            <span className="scenario-drawer__chip">Dataset: {detail.hasSimulation && detail.simulationGeneratedAt ? formatTimestamp(detail.simulationGeneratedAt) : "Not generated"}</span>
+          <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <span className="rounded-full border border-[rgba(148,163,184,0.25)] bg-[rgba(10,18,32,0.6)] px-3 py-1">
+              Completed overrides: {completedOverrideCount}
+            </span>
+            <span className="rounded-full border border-[rgba(148,163,184,0.25)] bg-[rgba(10,18,32,0.6)] px-3 py-1">
+              Projection overrides: {projectionOverrideCount}
+            </span>
+            <span className="rounded-full border border-[rgba(148,163,184,0.25)] bg-[rgba(10,18,32,0.6)] px-3 py-1">
+              Dataset: {detail.hasSimulation && detail.simulationGeneratedAt ? formatTimestamp(detail.simulationGeneratedAt) : "Not generated"}
+            </span>
           </div>
 
           <DiffList

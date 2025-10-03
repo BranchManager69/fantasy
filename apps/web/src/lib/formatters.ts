@@ -31,7 +31,10 @@ export function probabilityTone(probability: number): "favorable" | "coinflip" |
 }
 
 export function probabilityClass(probability: number): string {
-  return `cell cell--${probabilityTone(probability)}`;
+  const tone = probabilityTone(probability);
+  if (tone === "favorable") return "bg-[rgba(34,197,94,0.08)]";
+  if (tone === "underdog") return "bg-[rgba(249,115,22,0.08)]";
+  return "bg-[rgba(96,165,250,0.08)]";
 }
 
 export function probabilityLabel(probability: number): string {

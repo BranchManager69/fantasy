@@ -55,6 +55,14 @@ export function getHistoryRoot(): string {
   return path.join(getDataRoot(), "history");
 }
 
+export function getEspnRawRoot(): string {
+  return path.join(getDataRoot(), "raw", "espn");
+}
+
+export function scoreboardPath(season: string | number, week: string | number): string {
+  return path.join(getEspnRawRoot(), String(season), `view-mScoreboard-week-${week}.json`);
+}
+
 export function seasonDir(season: string | number) {
   return path.join(getEspnOutRoot(), String(season));
 }
@@ -65,4 +73,8 @@ export function simulationSeasonDir(season: string | number) {
 
 export function simulationHistorySeasonDir(season: string | number) {
   return path.join(getHistoryRoot(), "simulations", String(season));
+}
+
+export function refreshDiffLogPath(): string {
+  return path.join(getHistoryRoot(), "refresh-diff.log");
 }

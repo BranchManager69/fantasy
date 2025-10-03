@@ -183,7 +183,7 @@ async function listSimulationSeasons(): Promise<number[]> {
     .sort((a, b) => b - a);
 }
 
-async function readSimulationFile(filePath: string): Promise<RestOfSeasonSimulation | null> {
+export async function readSimulationFile(filePath: string): Promise<RestOfSeasonSimulation | null> {
   try {
     const contents = await fs.readFile(filePath, "utf-8");
     const parsed = JSON.parse(contents) as RestOfSeasonSimulation;
@@ -224,17 +224,46 @@ export async function getPreviousSimulationSnapshot(
   simulation: RestOfSeasonSimulation,
   scenarioId?: string,
 ): Promise<RestOfSeasonSimulation | null> {
+  const entries = await listSimulationHistorySnapshots(simulation, scenarioId, { limit: 1 });
+  for (const entry of entries) {
+    const dataset = await readSimulationFile(entry.path);
+    if (!dataset) {
+      continue;
+    }
+    if (dataset.generated_at === simulation.generated_at) {
+      continue;
+    }
+    return dataset;
+  }
+  return null;
+}
+
+type HistorySnapshotOptions = {
+  limit?: number;
+};
+
+type HistorySnapshotEntry = {
+  path: string;
+  timestamp: number;
+};
+
+export async function listSimulationHistorySnapshots(
+  simulation: RestOfSeasonSimulation,
+  scenarioId?: string,
+  options: HistorySnapshotOptions = {},
+): Promise<HistorySnapshotEntry[]> {
   const historyDir = simulationHistorySeasonDir(simulation.season);
   const baseName = scenarioFilename(scenarioId).replace(/\.json$/i, "");
   let entries: string[];
   try {
     entries = await fs.readdir(historyDir);
   } catch {
-    return null;
+    return [];
   }
 
   const prefix = `${baseName}__`;
-  const candidates = entries
+  const targetScenario = scenarioIdentifier(simulation);
+  const processed = entries
     .filter((name) => name.startsWith(prefix) && name.endsWith(".json"))
     .map((name) => {
       const stamp = name.slice(prefix.length, -5);
@@ -244,24 +273,20 @@ export async function getPreviousSimulationSnapshot(
     .filter((entry): entry is { name: string; timestamp: number } => entry.timestamp !== null)
     .sort((a, b) => b.timestamp - a.timestamp);
 
-  const targetScenario = scenarioIdentifier(simulation);
-
-  for (const candidate of candidates) {
+  const results: HistorySnapshotEntry[] = [];
+  for (const candidate of processed) {
     const filePath = path.join(historyDir, candidate.name);
     const dataset = await readSimulationFile(filePath);
-    if (!dataset) {
-      continue;
+    if (!dataset) continue;
+    if (dataset.generated_at === simulation.generated_at) continue;
+    if (scenarioIdentifier(dataset) !== targetScenario) continue;
+    results.push({ path: filePath, timestamp: candidate.timestamp });
+    if (options.limit && results.length >= options.limit) {
+      break;
     }
-    if (dataset.generated_at === simulation.generated_at) {
-      continue;
-    }
-    if (scenarioIdentifier(dataset) !== targetScenario) {
-      continue;
-    }
-    return dataset;
   }
 
-  return null;
+  return results;
 }
 
 export type SimulationLookup = {
