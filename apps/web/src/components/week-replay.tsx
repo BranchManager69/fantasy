@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReplayMatchup, ReplayPlayer, ReplayTeam } from "@/lib/week-replay";
 import type { StudioEpisode, StudioEpisodeResponse } from "@/lib/studio-episode";
+import type { WeekLeagueOverview } from "@/lib/league-overview";
+import type { WeekLeagueMedia } from "@/lib/league-media";
+import { TeamIdentityImage } from "@/components/league-board";
 
 type View = "final" | "play" | "lineup" | "episode";
 type Scores = [number, number];
-type Owners = StudioEpisodeResponse["owners"];
 const points = (value: number) => value.toFixed(1);
 const rounded = (value: number) => Math.round(value * 10) / 10;
 const margin = (scores: Scores) => rounded(rounded(scores[0]) - rounded(scores[1]));
@@ -55,8 +57,8 @@ function resultLabel(difference: number, final: boolean, hypothetical = false) {
   return difference > 0 ? "Leading" : "Trailing";
 }
 
-function Scoreboard({ replay, scores, final = false, hypothetical = false, portraits = false, owners = {} }: {
-  replay: ReplayMatchup; scores: Scores; final?: boolean; hypothetical?: boolean; portraits?: boolean; owners?: Owners;
+function Scoreboard({ replay, scores, final = false, hypothetical = false, portraits = false, media, overview }: {
+  replay: ReplayMatchup; scores: Scores; final?: boolean; hypothetical?: boolean; portraits?: boolean; media?: WeekLeagueMedia; overview?: WeekLeagueOverview;
 }) {
   const difference = margin(scores);
   return <div className={`replay-scoreboard${portraits ? " replay-scoreboard-portraits" : ""}`}>
@@ -64,9 +66,9 @@ function Scoreboard({ replay, scores, final = false, hypothetical = false, portr
       const lead = index === 0 ? difference : -difference;
       const tone = lead === 0 ? "tie" : lead > 0 ? "win" : "loss";
       return <div className={`replay-team replay-${tone}`} key={team.id}>
-        <h3>{team.name}</h3><strong className="replay-score">{points(scores[index])}</strong>
+        {portraits && media && <TeamIdentityImage team={team} media={media} caption />}
+        <h3>{team.name}</h3>{overview?.teams[String(team.id)]?.record && <span className="replay-team-record">{overview.teams[String(team.id)].record!.label}</span>}<strong className="replay-score">{points(scores[index])}</strong>
         <span className="replay-result">{resultLabel(lead, final, hypothetical)}</span>
-        {portraits && <TeamPortraits team={team} owners={owners[String(team.id)] ?? []} />}
       </div>;
     })}
   </div>;
@@ -76,13 +78,7 @@ function LeadingPlayer({ player }: { player: ReplayPlayer }) {
   return <figure className="replay-leading-player"><Portrait name={player.name} url={player.headshotUrl} /><figcaption>{player.name}<span>{points(player.points)} points</span></figcaption></figure>;
 }
 
-function TeamPortraits({ team, owners }: { team: ReplayTeam; owners: Owners[string] }) {
-  const photographed = owners.filter((owner) => owner.portraitUrl);
-  if (!photographed.length) return team.player ? <LeadingPlayer player={team.player} /> : null;
-  return <div className="replay-owner-portraits">{photographed.map((owner) => <figure key={owner.id}><Portrait name={owner.name} url={owner.portraitUrl} /><figcaption>{owner.name}</figcaption></figure>)}</div>;
-}
-
-function FinalResult({ replay, owners }: { replay: ReplayMatchup; owners: Owners }) {
+function FinalResult({ replay, media, overview }: { replay: ReplayMatchup; media: WeekLeagueMedia; overview: WeekLeagueOverview }) {
   const scores: Scores = [replay.team.score, replay.opponent.score];
   const difference = margin(scores);
   const final = replay.team.final && replay.opponent.final;
@@ -91,11 +87,15 @@ function FinalResult({ replay, owners }: { replay: ReplayMatchup; owners: Owners
     const word = final ? (difference > 0 ? "Won" : "Lost") : (difference > 0 ? "Leading" : "Trailing");
     headline = `${word} by ${points(Math.abs(difference))}.`;
   }
+  const rank = overview.teams[String(replay.team.id)]?.weeklyRank;
+  const tied = overview.teams[String(replay.team.id)]?.weeklyRankTied;
+  if (final && difference < 0 && rank && rank <= Math.ceil(overview.aggregate.teamCount / 3)) headline = `${tied ? "Tied for " : ""}No. ${rank} in points. Still lost.`;
   const allPlay = replay.allPlay;
   return <div className="replay-scene replay-final">
-    <div className="replay-scene-intro"><h2 className="replay-title">{headline}</h2><p>{final ? "Final score" : "Week in progress"}</p></div>
-    <Scoreboard replay={replay} scores={scores} final={final} portraits owners={owners} />
-    {final && allPlay && <p className="replay-final-context">{replay.team.name}&apos;s score would beat <strong>{allPlay.wins} of {allPlay.wins + allPlay.losses + allPlay.ties}</strong> other teams.{allPlay.ties > 0 && ` It would tie ${allPlay.ties}.`}</p>}
+    <div className="replay-scene-intro"><h2 className="replay-title">{headline}</h2><p>{final ? `Final · ${points(Math.abs(difference))}-point ${difference < 0 ? "loss" : difference > 0 ? "win" : "tie"}` : "Week in progress"}</p></div>
+    <Scoreboard replay={replay} scores={scores} final={final} portraits media={media} overview={overview} />
+    {final && allPlay && <p className="replay-final-context"><strong>{points(replay.team.score)} points</strong> would beat <strong>{allPlay.wins} of {allPlay.wins + allPlay.losses + allPlay.ties}</strong> other teams.{allPlay.ties > 0 && ` It would tie ${allPlay.ties}.`}{difference < 0 && <> This week brought {replay.opponent.name}.</>}</p>}
+    <div className="replay-score-leaders">{[replay.team, replay.opponent].map((team) => team.player && <LeadingPlayer key={team.id} player={team.player} />)}</div>
   </div>;
 }
 
@@ -122,7 +122,7 @@ function TurningPoint({ replay }: { replay: ReplayMatchup }) {
   </div>;
 }
 
-function BestLineup({ replay, owners }: { replay: ReplayMatchup; owners: Owners }) {
+function BestLineup({ replay }: { replay: ReplayMatchup }) {
   const best = replay.bestLineup;
   const target = best.score!;
   const { scores, animate } = useScores([replay.team.score, replay.opponent.score]);
@@ -134,7 +134,7 @@ function BestLineup({ replay, owners }: { replay: ReplayMatchup; owners: Owners 
   if (difference > 0) headline = actualDifference < 0 ? `A ${points(difference)}-point win instead.` : `Ahead by ${points(difference)}.`;
   return <div className="replay-scene replay-lineup">
     <div className="replay-scene-intro"><h2 className="replay-title">{headline}</h2><p>Hindsight, using final points</p></div>
-    <Scoreboard replay={replay} scores={scores} hypothetical portraits owners={owners} />
+    <Scoreboard replay={replay} scores={scores} hypothetical />
     <p className="replay-lineup-gain">Actual <strong>{points(replay.team.score)}</strong><span aria-hidden="true"> / </span>Best <strong>{points(target)}</strong><span className="replay-gain">+{points(target - replay.team.score)} points</span></p>
     {best.moves.length ? <div className="replay-lineup-moves">{best.moves.map((move) => <figure key={`${move.id}-${move.to}`}><Portrait name={move.name} url={move.headshotUrl} /><figcaption><strong>{move.name}</strong><span>{move.from}<span className="replay-move-arrow">to</span>{move.to}</span><small>{points(move.points)} points</small></figcaption></figure>)}</div> : <p className="replay-lineup-unchanged">Your starters already made the best eligible lineup.</p>}
     <details className="replay-method"><summary>Lineup assumptions</summary><p>{best.caveat}</p></details>
@@ -159,28 +159,32 @@ function Episode({ episode, replay }: { episode: StudioEpisode; replay: ReplayMa
   </div>;
 }
 
+function EpisodeEntry({ episode, onOpen }: { episode: StudioEpisode; onOpen: () => void }) {
+  const scene = episode.scenes.find((item) => item.assetUrl);
+  if (!scene?.assetUrl) return null;
+  const excerpt = scene.commentary.split(/(?<=[.!?])\s+/).at(-1) ?? scene.commentary;
+  return <button type="button" className="replay-episode-entry" onClick={onOpen}>
+    <Image src={scene.assetUrl} alt={scene.title} width={480} height={320} unoptimized />
+    <span><strong>{episode.title}</strong><span>{excerpt}</span><small>Open the episode <span aria-hidden="true">›</span></small></span>
+  </button>;
+}
+
 function PlayIcon() { return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="m6 3 11 7-11 7Z" fill="currentColor" /></svg>; }
 function Chevron({ direction }: { direction: "left" | "right" }) { return <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d={direction === "left" ? "m12 4-6 6 6 6" : "m8 4 6 6-6 6"} fill="none" stroke="currentColor" strokeWidth="1.7" /></svg>; }
 
-export function WeekReplay({ replay, season, week }: { replay: ReplayMatchup; season: number; week: number }) {
+export function WeekReplay({ replay, season, week, media, overview }: { replay: ReplayMatchup; season: number; week: number; media: WeekLeagueMedia; overview: WeekLeagueOverview }) {
   const [view, setView] = useState<View>("final");
   const [episode, setEpisode] = useState<StudioEpisode | null>(null);
-  const [owners, setOwners] = useState<Owners>({});
   const [episodeError, setEpisodeError] = useState(false);
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    setEpisode(null); setOwners({}); setEpisodeError(false);
+    setEpisode(null); setEpisodeError(false);
     async function load() {
       try {
-        const session = await fetch("/api/studio/session", { cache: "no-store", signal: controller.signal });
-        if (!session.ok) throw new Error("Could not check saved episodes");
-        if (!(await session.json()).authorized) return;
-        const response = await fetch(`/api/studio/episode?season=${season}&week=${week}&teamId=${replay.team.id}`, { cache: "no-store", signal: controller.signal });
-        if (response.status === 401) return;
+        const response = await fetch(`/api/league/episode?season=${season}&week=${week}&teamId=${replay.team.id}`, { cache: "no-store", signal: controller.signal });
         if (!response.ok) throw new Error("Saved episode unavailable");
         const result = await response.json() as StudioEpisodeResponse;
-        setOwners(result.owners ?? {});
         if (result.episode && result.episode.season === season && result.episode.week === week && [replay.team.id, replay.opponent.id].includes(result.episode.teamId) && result.episode.scenes.length) setEpisode(result.episode);
       } catch { if (!controller.signal.aborted) setEpisodeError(true); }
     }
@@ -193,7 +197,8 @@ export function WeekReplay({ replay, season, week }: { replay: ReplayMatchup; se
   const views: { id: View; label: string }[] = [{ id: "final", label: replay.team.final && replay.opponent.final ? "Final" : "Score" }, ...(hasPlay ? [{ id: "play" as const, label: "Turning point" }] : []), ...(hasLineup ? [{ id: "lineup" as const, label: "Best lineup" }] : []), ...(episode ? [{ id: "episode" as const, label: "Episode" }] : [])];
   return <section className="week-replay" aria-label={`${replay.team.name} versus ${replay.opponent.name} replay`}>
     <nav className="replay-views" aria-label="Matchup views">{views.map((entry) => <button type="button" key={entry.id} aria-pressed={current === entry.id} onClick={() => setView(entry.id)}>{entry.label}</button>)}</nav>
-    <div className="replay-stage">{current === "final" && <FinalResult replay={replay} owners={owners} />}{current === "play" && hasPlay && <TurningPoint replay={replay} />}{current === "lineup" && hasLineup && <BestLineup replay={replay} owners={owners} />}{current === "episode" && episode && <Episode key={episode.id} episode={episode} replay={replay} />}</div>
+    <div className="replay-stage">{current === "final" && <FinalResult replay={replay} media={media} overview={overview} />}{current === "play" && hasPlay && <TurningPoint replay={replay} />}{current === "lineup" && hasLineup && <BestLineup replay={replay} />}{current === "episode" && episode && <Episode key={episode.id} episode={episode} replay={replay} />}</div>
+    {current === "final" && episode && <EpisodeEntry episode={episode} onOpen={() => setView("episode")} />}
     {episodeError && <p className="replay-episode-retry">Saved episode unavailable. <button type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button></p>}
   </section>;
 }

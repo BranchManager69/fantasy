@@ -8,7 +8,8 @@
     "start": "next start",
     "test:analyst": "tsx --test src/server/analyst-*.test.ts src/lib/analyst-stream.test.ts",
     "test:studio": "tsx --test src/server/league-studio-*.test.ts",
-    "test:replay": "tsx --test src/server/week-replay.test.ts"
+    "test:replay": "tsx --test src/server/week-replay.test.ts",
+    "test:league": "tsx --test src/server/league-overview.test.ts src/server/league-studio-public-media.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

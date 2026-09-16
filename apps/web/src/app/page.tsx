@@ -2,6 +2,8 @@ import Link from "next/link";
 import { WeekExplorer } from "@/components/week-explorer";
 import { loadLeagueWeek } from "@/lib/league-week";
 import { buildWeekReplays } from "@/server/week-replay";
+import { buildLeagueOverview } from "@/server/league-overview";
+import { buildPublicLeagueMedia } from "@/server/league-public-media";
 import "./week.css";
 import "./replay.css";
 
@@ -18,7 +20,11 @@ export default async function Home({ searchParams }: { searchParams?: Promise<Se
   if (!report) return <main className="week-page"><div className="week-wrap"><section className="week-empty">
     <h1>That week is still on the way.</h1><p>The Week {week} report for {season} has not been prepared yet.</p><Link href="/">Return to Week 1</Link>
   </section></div></main>;
-  const replays = await buildWeekReplays(report, moments);
+  const [replays, overview, media] = await Promise.all([
+    buildWeekReplays(report, moments),
+    buildLeagueOverview(report),
+    buildPublicLeagueMedia(report),
+  ]);
   const selectedTeam = report.teams.find((team) => team.id === Number(params.team))
     ?? report.teams.find((team) => team.id === Number(process.env.FANTASY_DEFAULT_TEAM_ID || 8));
   const updated = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(report.generatedAt));
@@ -30,7 +36,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<Se
       <nav className="week-nav" aria-label="League navigation"><a href="#results-title">The league</a><Link href="/season">Season outlook</Link><Link href="/studio">Studio</Link></nav>
     </header>
 
-    <WeekExplorer report={report} replays={replays} initialTeamId={selectedTeam?.id} />
+    <WeekExplorer report={report} replays={replays} overview={overview} media={media} initialTeamId={selectedTeam?.id} />
 
     <footer className="week-footer"><span>Report prepared {updated} UTC.</span><a href={report.sourceUrl} target="_blank" rel="noreferrer">View the ESPN scoreboard</a>{moments?.lead && <a href={moments.lead.source_url} target="_blank" rel="noreferrer">NFL play-by-play source</a>}</footer>
   </div></main>;

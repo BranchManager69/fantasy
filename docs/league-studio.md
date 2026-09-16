@@ -74,7 +74,7 @@ Rendering makes one image-edit request using the cast's reference photos: a 1536
 
 ## Private storage and checks
 
-All studio state lives under `DATA_ROOT/private/studio/`. The repository ignores `data/private/`; keep a custom `DATA_ROOT` outside public static directories and apply equivalent Git exclusions if it is inside another checkout. Directories are created with mode `0700` and files with mode `0600`. Preserve those permissions in backups. Raw chat, profiles and generated assets are served through authenticated studio routes, separately from the public weekly feed.
+All studio state lives under `DATA_ROOT/private/studio/`. The repository ignores `data/private/`; keep a custom `DATA_ROOT` outside public static directories and apply equivalent Git exclusions if it is inside another checkout. Directories are created with mode `0700` and files with mode `0600`. Preserve those permissions in backups. Editing, raw chat, personal backgrounds and image prompts require studio access. The public league page serves selected owner photos and saved episode scenes through `/api/league/episode` and `/api/league/images/:id`, without a code. Unassigned cutouts and other source material remain in the editor.
 
 | Location within the studio directory | Contents |
 | --- | --- |

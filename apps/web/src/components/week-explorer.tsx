@@ -6,19 +6,13 @@ import { LeagueAnalyst } from "@/components/league-analyst";
 import { PlayerPortrait } from "@/components/player-portrait";
 import { WeekReplay } from "@/components/week-replay";
 import type { WeekReplays } from "@/lib/week-replay";
+import type { WeekLeagueOverview } from "@/lib/league-overview";
+import type { WeekLeagueMedia } from "@/lib/league-media";
+import { LeagueMatchups, ScoreLadder, TeamIdentityImage } from "@/components/league-board";
 
 const points = (value: number | null) => value === null ? "N/A" : value.toFixed(1);
 const signed = (value: number) => `${value > 0 ? "+" : ""}${points(value)}`;
 const outcome = (score: number, opponentScore: number) => Math.abs(score - opponentScore) < 0.001 ? "Tied on points" : score > opponentScore ? "Win" : "Loss";
-
-function leadingPlayer(team: WeekTeam) {
-  return team.players.filter((player) => player.starter && player.points !== null).sort((a, b) => (b.points ?? 0) - (a.points ?? 0))[0];
-}
-
-function teamResult(team: WeekTeam) {
-  const result: "win" | "loss" | "tie" = team.final && ["win", "loss", "tie"].includes(team.result) ? team.result as "win" | "loss" | "tie" : Math.abs(team.score - team.opponentScore) < 0.001 ? "tie" : team.score > team.opponentScore ? "win" : "loss";
-  return { result, label: team.final ? { win: "Win", loss: "Loss", tie: "Tie" }[result] : { win: "Leading", loss: "Trailing", tie: "Tied" }[result] };
-}
 
 function PlayerList({ team, bench = false }: { team: WeekTeam; bench?: boolean }) {
   const players = team.players.filter((player) => player.starter !== bench);
@@ -31,7 +25,7 @@ function PlayerList({ team, bench = false }: { team: WeekTeam; bench?: boolean }
   </ul>;
 }
 
-export function WeekExplorer({ report, replays, initialTeamId }: { report: LeagueWeek; replays: WeekReplays; initialTeamId?: number }) {
+export function WeekExplorer({ report, replays, overview, media, initialTeamId }: { report: LeagueWeek; replays: WeekReplays; overview: WeekLeagueOverview; media: WeekLeagueMedia; initialTeamId?: number }) {
   const [teamId, setTeamId] = useState(initialTeamId ?? report.teams[0]?.id);
   const [outId, setOutId] = useState("");
   const [inId, setInId] = useState("");
@@ -67,31 +61,13 @@ export function WeekExplorer({ report, replays, initialTeamId }: { report: Leagu
           {report.teams.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
         </select></label>
       </div>
-      {replays[String(team.id)] && <WeekReplay key={`${report.season}-${report.week}-${team.id}`} replay={replays[String(team.id)]} season={report.season} week={report.week} />}
-    </section>
-    <LeagueAnalyst key={`${report.season}-${report.week}-${team.id}`} season={report.season} week={report.week} teamId={team.id} teamName={team.name} />
-
-    <section className="week-results" aria-labelledby="results-title">
-      <div className="week-section-heading"><h2 id="results-title">Around the league</h2><p>{report.complete ? "Final scores" : "In progress"}</p></div>
-      <div className="week-results-grid">
-        {report.matchups.map((matchup) => {
-          const home = report.teams.find((entry) => entry.id === matchup.homeId);
-          const away = report.teams.find((entry) => entry.id === matchup.awayId);
-          if (!home || !away) return null;
-          return <div key={matchup.id} className="week-matchup" role="group" aria-label={`${home.name} versus ${away.name}`}>
-            {[home, away].map((entry) => {
-              const leader = leadingPlayer(entry);
-              const status = teamResult(entry);
-              return <button type="button" className={`week-matchup-row week-result-${status.result}`} aria-pressed={team.id === entry.id} key={entry.id} onClick={() => selectTeam(entry.id, true)}>
-                {leader ? <PlayerPortrait id={leader.id} name={leader.name} description={`${leader.name}, ${entry.name}'s leading scorer with ${points(leader.points)} points`} /> : <span />}
-                <span className="week-matchup-name">{entry.name}</span>
-                <span className="week-matchup-score"><strong>{points(entry.score)}</strong><small>{status.label}</small></span>
-              </button>;
-            })}
-          </div>;
-        })}
+      <div className="week-league-stage">
+        {replays[String(team.id)] && <WeekReplay key={`${report.season}-${report.week}-${team.id}`} replay={replays[String(team.id)]} season={report.season} week={report.week} overview={overview} media={media} />}
+        <ScoreLadder report={report} overview={overview} media={media} selectedTeamId={team.id} onSelect={(id) => selectTeam(id, true)} />
       </div>
     </section>
+    <LeagueMatchups report={report} overview={overview} media={media} selectedTeamId={team.id} onSelect={(id) => selectTeam(id, true)} />
+    <LeagueAnalyst key={`${report.season}-${report.week}-${team.id}`} season={report.season} week={report.week} teamId={team.id} teamName={team.name} />
 
     <details className="week-lineup-details">
       <summary>Lineups and bench decisions</summary>
@@ -131,10 +107,9 @@ export function WeekExplorer({ report, replays, initialTeamId }: { report: Leagu
           <h3 id="allplay-title">Against every team</h3>
           <p className="week-allplay-record">{wins}–{others.length - wins - ties}{ties ? `–${ties}` : ""}<span> with {points(revisedScore)} points{substitution ? " after your swap" : ""}</span></p>
           <ul>{others.map((entry) => {
-            const leader = leadingPlayer(entry);
             const comparison = outcome(revisedScore, entry.score);
             return <li key={entry.id}>
-              {leader ? <PlayerPortrait id={leader.id} name={leader.name} description={`${leader.name}, leading scorer for ${entry.name}`} /> : <span />}
+              <TeamIdentityImage team={entry} media={media} />
               <span>{entry.name}{entry.id === team.opponentId && <small>Your matchup</small>}</span><strong>{points(entry.score)}</strong><span className={comparison === "Win" ? "week-positive" : comparison === "Loss" ? "week-negative" : ""}>{comparison === "Tied on points" ? "Tie" : comparison}</span>
             </li>;
           })}</ul>

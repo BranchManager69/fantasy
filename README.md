@@ -82,11 +82,15 @@ API references: [quickstart](https://developers.openai.com/api/docs/guides/agent
 
 The private `/studio` workspace stores GM profiles, reference photos and sourced league memories. It combines these with weekly evidence to draft scenes, lets an editor revise them, and renders images on request. Producer plans and import progress are saved so interrupted work can resume.
 
-See [the studio operations guide](docs/league-studio.md) for owner seeding, the confirmed Dillon account mapping, private access links, import formats, model settings and separate text/image limits. The store requires Linux `/usr/bin/flock`. Studio data stays under `DATA_ROOT/private/studio/` and is excluded from the public weekly feed.
+See [the studio operations guide](docs/league-studio.md) for owner seeding, the confirmed Dillon account mapping, editor access links, import formats, model settings and separate text/image limits. The store requires Linux `/usr/bin/flock`. Studio data stays under `DATA_ROOT/private/studio/`. The public viewer receives selected display photos and saved scenes; raw backgrounds, chats, prompts and memory records stay in the editor.
 
 The home page opens on official matchup scores. Select a team to revisit a verified turning point or compare its best legal lineup using final points. Turning points appear only where the saved evidence includes checked before/after scores. Other matchups retain their official result and supported lineup comparison. `FANTASY_DEFAULT_TEAM_ID` chooses the initial team; the `team` URL parameter overrides it.
 
-After signing in to the studio, the same viewer can display saved episodes and assigned owner portraits. Its authenticated episode endpoint exposes only display names, scenes and image URLs. Backgrounds, chat sources, prompt text and memory records remain in the editor. Viewing an episode makes no AI request.
+The league viewer displays owner photos and saved episodes without an access code. `GET /api/league/episode` returns the display projection, and `/api/league/images/:id` serves images referenced by that projection. The editor retains its shared access link. Viewing an episode makes no AI request.
+
+Weekly scores share a zero-based scale with a league median. Matchups show final margins and team records; standings and points for/against use results through the selected week. ESPN seeding is displayed only when its cumulative records reconcile with that history.
+
+Owner photos use supplied person labels. Optional `DATA_ROOT/private/studio/display-crops.json` entries frame a labeled person by normalized `x`, `y`, `width` and `height`, without changing the original. Group-photo frames follow the user's row and position labels. A frame containing multiple people can specify `kind: "photo"` and `peopleNames`. Teams without identified owner photos use their ESPN team image.
 
 ## Data and scenarios
 
@@ -105,6 +109,7 @@ The `fantasy scenario` commands create overlays and change historical scores or 
 poetry run pytest
 npm run test:studio --prefix apps/web
 npm run test:replay --prefix apps/web
+npm run test:league --prefix apps/web
 npm run build --prefix apps/web
 npm audit --prefix apps/web
 ```
