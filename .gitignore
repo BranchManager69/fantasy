@@ -22,6 +22,7 @@ apps/web/node_modules/
 apps/web/.next/
 apps/web/.next-ai/
 apps/web/.next-analyst/
+apps/web/.next-*/
 apps/web/.turbo/
 
 # Project data
@@ -32,6 +33,7 @@ data/raw/
 data/out/
 data/in/
 data/history/
+data/private/
 
 # Test artifacts
 .pytest_cache/

@@ -59,7 +59,9 @@ Production uses the built Next.js application under PM2. Rebuild and restart the
 
 Supply `OPENAI_API_KEY` in the web process environment. It stays on the server and is never sent to the hosted workspace or browser. The key needs Agents API access and inference permission. The question form makes a model request only when submitted.
 
-Each question creates one OpenAI-hosted session with network access disabled and subagents disabled. Three application functions provide the selected matchup, deterministic bench alternatives, and game moments. The server accepts only completed answers, captures usage when available, then requests session deletion. A browser disconnect or 90-second deadline sends server cancellation before cleanup. Hosted resource cleanup continues asynchronously after deletion is accepted.
+Each question receives verified matchup, complete legal-lineup optimization and game evidence before its OpenAI-hosted session starts. Application functions remain available for further research. The writer can also search the web for relevant NFL reporting and source links. Sandbox network access and subagents remain disabled. `FANTASY_ANALYST_MODEL` selects the writer independently of the evidence pipeline; its editorial instructions live in `analyst-writer.ts`.
+
+The browser receives actual progress events and shows elapsed time. Completed answers survive optional usage-accounting failures. A browser disconnect or 180-second deadline sends server cancellation before cleanup; hosted resource cleanup continues asynchronously after deletion is accepted. Receipts distinguish timeouts from disconnects and retain the last stage and completed tool names.
 
 The preview allows six attempts per UTC day across the league and one active request at a time. `FANTASY_ANALYST_DAILY_LIMIT` may lower this or raise it to at most 20. Failed attempts count. Receipts in `data/history/analyst/runs/` record session/turn IDs, status, tool names and reported token usage; they omit keys, prompts and generated answers. Missing usage stays unknown. These are request limits, not a guaranteed dollar ceiling. The Agents API currently exposes no per-turn token ceiling.
 
@@ -72,9 +74,15 @@ cd apps/web
 npx tsx scripts/smoke-analyst.ts
 ```
 
-The explicit smoke script additionally saves its answer beside its receipt for review. The web endpoint is `POST /api/analyst` with `season`, `week`, `teamId`, and `question`; `GET /api/analyst` reports availability without inference. Each submitted question is independent and uses the selected team and week.
+The explicit smoke script additionally saves its answer beside its receipt for review. The web endpoint is `POST /api/analyst` with `season`, `week`, `teamId`, and `question`; clients requesting `Accept: text/event-stream` receive progress, result or error events with ten-second keepalives. Other clients receive JSON. `GET /api/analyst` reports availability without inference. Each submitted question is independent and uses the selected team and week.
 
 API references: [quickstart](https://developers.openai.com/api/docs/guides/agents-api/quickstart), [function tools](https://developers.openai.com/api/docs/guides/agents-api/tools/functions), [hosted environments](https://developers.openai.com/api/docs/guides/agents-api/environments/openai-hosted).
+
+## Private league studio
+
+The private `/studio` workspace stores GM profiles, reference photos and sourced league memories. It combines these with weekly evidence to draft scenes, lets an editor revise them, and renders images on request. Producer plans and import progress are saved so interrupted work can resume.
+
+See [the studio operations guide](docs/league-studio.md) for owner seeding, the confirmed Dillon account mapping, private access links, import formats, model settings and separate text/image limits. The store requires Linux `/usr/bin/flock`. Studio data stays under `DATA_ROOT/private/studio/` and is excluded from the public weekly feed.
 
 ## Data and scenarios
 
@@ -91,6 +99,7 @@ The `fantasy scenario` commands create overlays and change historical scores or 
 
 ```bash
 poetry run pytest
+npm run test:studio --prefix apps/web
 npm run build --prefix apps/web
 npm audit --prefix apps/web
 ```

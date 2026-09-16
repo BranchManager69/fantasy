@@ -6,6 +6,8 @@
   --week-line: #ced0c4;
   --week-green: #234c39;
   --week-tint: #e7eddf;
+  --week-loss: #8a382e;
+  --week-loss-tint: #f3e9e3;
   --week-space: 8px;
   color-scheme: light;
   min-height: 100vh;
@@ -31,28 +33,44 @@ body:has(.week-page)::before { display: none; }
 .week-play { background: var(--week-green); color: var(--week-surface); padding: 32px; border-radius: 4px; }
 .week-play h2 { font-size: 22px; font-weight: 600; line-height: 1.3; }
 .week-play-context { margin-top: 8px; font-size: 14px; }
-.week-play-points { font-family: Georgia, serif; font-size: 64px; line-height: 1.2; margin-top: 24px; }
-.week-play-points span { font-family: var(--font-geist-sans), sans-serif; font-size: 16px; margin-left: 12px; white-space: nowrap; }
+.week-play-athlete { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 16px; align-items: center; }
+.week-play-points { font-family: Georgia, serif; font-size: 56px; line-height: 1.2; margin-top: 12px; }
+.week-play-points span { display: block; font-family: var(--font-geist-sans), sans-serif; font-size: 14px; }
 .week-play table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 24px; }
 .week-play th { text-align: right; font-weight: 400; padding: 4px 0 8px 12px; }
 .week-play th:first-child { text-align: left; padding-left: 0; }
 .week-play td { text-align: right; padding: 8px 0 8px 12px; font-variant-numeric: tabular-nums; }
 .week-play td:first-child { text-align: left; padding-left: 0; }
-.week-play-note { font-size: 12px; line-height: 1.6; margin-top: 20px; }
+.week-play-links { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 20px; margin-top: 16px; font-size: 13px; }
+.week-play-links > a { display: inline-flex; min-height: 44px; align-items: center; text-decoration: underline; }
+.week-play-links :is(a, summary):focus-visible { outline-color: var(--week-surface); }
+.week-play-note { font-size: 12px; line-height: 1.6; }
+.week-play-note summary { min-height: 44px; align-content: center; cursor: pointer; }
+.week-play-note p { max-width: 36ch; }
 .week-page h2 { font-size: 26px; line-height: 1.25; font-weight: 600; }
 .week-page h3 { font-size: 18px; line-height: 1.4; font-weight: 600; }
 .week-other-moments { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; padding-bottom: 48px; }
+.week-other-moments article { display: flex; align-items: flex-start; gap: 16px; }
+.week-other-moments h3 span { display: inline-block; margin-left: 4px; font-variant-numeric: tabular-nums; }
 .week-other-moments p { color: var(--week-muted); font-size: 14px; margin-top: 8px; max-width: 64ch; }
 .week-other-moments details { margin-top: 8px; color: var(--week-muted); font-size: 13px; }
 .week-other-moments summary { cursor: pointer; min-height: 40px; display: list-item; align-content: center; }
 .week-section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 .week-section-heading p { color: var(--week-muted); font-size: 14px; }
 .week-results { padding: 40px 0; border-top: 1px solid var(--week-line); }
-.week-results-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.week-matchup { display: grid; gap: 8px; width: 100%; text-align: left; padding: 16px; border: 1px solid var(--week-line); border-radius: 4px; background: transparent; color: var(--week-ink); cursor: pointer; }
-.week-matchup[aria-pressed="true"] { background: var(--week-tint); border-color: var(--week-green); }
-.week-matchup-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; font-size: 13px; align-items: baseline; }
-.week-matchup-row strong { font-size: 15px; font-variant-numeric: tabular-nums; }
+.week-results-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.week-matchup { display: grid; gap: 4px; padding: 4px; border: 1px solid var(--week-line); border-radius: 4px; }
+.week-matchup-row { display: grid; width: 100%; min-height: 64px; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 8px; padding: 8px; text-align: left; font-size: 14px; align-items: center; color: var(--week-ink); border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; }
+.week-matchup-row[aria-pressed="true"] { border-color: var(--week-green); }
+.week-matchup-row.week-result-win { background: var(--week-tint); }
+.week-matchup-row.week-result-loss { background: var(--week-loss-tint); }
+.week-matchup-name { line-height: 1.4; }
+.week-matchup-row.week-result-win .week-matchup-name { font-weight: 600; }
+.week-matchup-score { text-align: right; line-height: 1.3; }
+.week-matchup-score strong { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+.week-matchup-score small { display: block; font-size: 12px; }
+.week-result-win :is(.week-matchup-score, strong, small), .week-positive { color: var(--week-green); }
+.week-result-loss :is(.week-matchup-score, strong, small), .week-negative { color: var(--week-loss); }
 .week-investigate { padding-top: 40px; }
 .week-team-heading { align-items: flex-end; }
 .week-team-heading p { margin-top: 8px; }
@@ -64,11 +82,12 @@ body:has(.week-page)::before { display: none; }
 .week-official-result > span { font-size: 14px; line-height: 1.4; }
 .week-official-result > span:last-child { text-align: right; }
 .week-official-result strong { display: block; font-family: Georgia, serif; font-size: 48px; line-height: 1.4; font-weight: 400; font-variant-numeric: tabular-nums; }
+.week-official-result small { display: block; font-size: 13px; font-weight: 600; }
 .week-result-word { color: var(--week-muted); font-size: 12px !important; }
 .week-lineups { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .week-lineups h3 { font-size: 14px; min-height: 40px; }
 .week-players { list-style: none; }
-.week-players li { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: baseline; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--week-line); font-size: 13px; }
+.week-players li { display: grid; grid-template-columns: 28px 48px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--week-line); font-size: 13px; }
 .week-players strong { font-variant-numeric: tabular-nums; font-weight: 600; }
 .week-position { color: var(--week-muted); font-size: 12px; }
 .week-bench { margin-top: 12px; }
@@ -77,16 +96,24 @@ body:has(.week-page)::before { display: none; }
 .week-substitution { margin-top: 40px; padding: 24px; border: 1px solid var(--week-line); border-radius: 4px; background: var(--week-surface); }
 .week-substitution > p { color: var(--week-muted); margin-top: 8px; font-size: 14px; }
 .week-swap-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.week-player-select { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.week-player-select select { flex: 1; }
+.week-player-select .week-portrait { flex: 0 0 48px; }
 .week-swap-result { margin-top: 24px; font-size: 14px; }
+.week-swap-result:empty { display: none; }
 .week-swap-result > strong { font-size: 28px; font-variant-numeric: tabular-nums; }
 .week-swap-result p { margin-top: 4px; }
 .week-swap-result button { color: var(--week-green); text-decoration: underline; text-underline-offset: 4px; min-height: 44px; margin-top: 8px; border: 0; background: transparent; cursor: pointer; }
+.week-method { margin-top: 16px; font-size: 12px; color: var(--week-muted); }
+.week-method summary { min-height: 40px; align-content: center; cursor: pointer; }
+.week-method .week-caption { margin-top: 4px; }
 .week-allplay { padding-top: 32px; }
 .week-allplay-record { font-family: Georgia, serif; font-size: 52px; color: var(--week-green); margin-top: 8px; }
-.week-allplay-record span { font-family: var(--font-geist-sans), sans-serif; font-size: 14px; color: var(--week-muted); }
+.week-allplay-record span { display: block; font-family: var(--font-geist-sans), sans-serif; font-size: 14px; color: var(--week-muted); }
 .week-allplay > p:not(.week-allplay-record) { font-size: 14px; color: var(--week-muted); }
 .week-allplay ul { list-style: none; margin-top: 24px; }
-.week-allplay li { display: grid; grid-template-columns: minmax(0, 1fr) 42px 34px; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--week-line); font-size: 12px; align-items: baseline; }
+.week-allplay li { display: grid; grid-template-columns: 40px minmax(0, 1fr) 42px 34px; gap: 8px; padding: 12px 0; border-bottom: 1px solid var(--week-line); font-size: 12px; align-items: center; }
+.week-allplay li .week-portrait { width: 40px; }
 .week-allplay li strong { text-align: right; font-variant-numeric: tabular-nums; }
 .week-allplay li > span:last-child { text-align: right; }
 .week-allplay small { display: block; font-size: 12px; color: var(--week-muted); }
@@ -99,6 +126,12 @@ body:has(.week-page)::before { display: none; }
 .week-retry { background: var(--week-green); color: var(--week-surface); border: 0; border-radius: 4px; padding: 12px 24px; min-height: 44px; cursor: pointer; }
 .week-loading-block { width: 90%; height: 160px; background: var(--week-tint); margin-bottom: 24px; }
 .week-loading-line { width: 100%; height: 24px; background: var(--week-tint); margin-top: 12px; }
+.week-portrait { display: inline-flex; position: relative; width: 48px; aspect-ratio: 350 / 254; flex-shrink: 0; align-items: center; justify-content: center; vertical-align: middle; }
+.week-portrait img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.week-portrait-fallback { display: flex; align-items: center; justify-content: center; width: 72%; aspect-ratio: 1; border-radius: 50%; background: var(--week-tint); color: var(--week-green); font-size: 13px; font-weight: 600; }
+.week-portrait-feature { width: 100%; align-self: end; }
+.week-portrait-feature .week-portrait-fallback { font-size: 32px; }
+.week-portrait-moment { width: 80px; margin-top: 4px; }
 .week-analyst { max-width: 840px; margin: 32px 0 40px; }
 .week-analyst-intro { color: var(--week-muted); font-size: 14px; margin-top: 8px; }
 .week-analyst-suggestions { display: flex; gap: 8px 24px; flex-wrap: wrap; margin: 12px 0 16px; }
@@ -121,7 +154,7 @@ body:has(.week-page)::before { display: none; }
 @media (max-width: 1000px) {
   .week-hero { gap: 32px; grid-template-columns: 1fr; }
   .week-page h1 { max-width: 20ch; }
-  .week-results-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .week-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .week-workspace { grid-template-columns: 1fr; gap: 32px; }
   .week-allplay { max-width: 680px; }
 }
@@ -136,10 +169,8 @@ body:has(.week-page)::before { display: none; }
   .week-play { padding: 24px; }
   .week-other-moments { grid-template-columns: 1fr; gap: 24px; padding-bottom: 32px; }
   .week-results { padding: 32px 0; }
-  .week-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .week-matchup { padding: 12px; }
-  .week-matchup-row { font-size: 12px; gap: 8px; }
-  .week-matchup-row strong { font-size: 13px; }
+  .week-results-grid { grid-template-columns: 1fr; gap: 12px; }
+  .week-matchup-row { min-height: 60px; }
   .week-section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
   .week-page h2 { font-size: 24px; }
   .week-team-heading .week-field { width: 100%; margin-top: 12px; }

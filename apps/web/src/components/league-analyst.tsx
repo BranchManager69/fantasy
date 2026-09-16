@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { readAnalystStream } from "@/lib/analyst-stream";
 
 type Availability = {
   enabled: boolean;
   remaining: number;
   dailyLimit: number;
   busy: boolean;
+  activity?: { stage: string; elapsedMs: number } | null;
 };
 
 type AnalystAnswer = {
@@ -44,6 +46,8 @@ export function LeagueAnalyst({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [statusVersion, setStatusVersion] = useState(0);
+  const [progress, setProgress] = useState("");
+  const [elapsed, setElapsed] = useState(0);
   const activeRequest = useRef<AbortController | null>(null);
   const textarea = useRef<HTMLTextAreaElement | null>(null);
   const id = `analyst-${season}-${week}-${teamId}`;
@@ -76,6 +80,19 @@ export function LeagueAnalyst({
 
   useEffect(() => () => activeRequest.current?.abort(), []);
 
+  useEffect(() => {
+    if (!pending) return;
+    const started = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [pending]);
+
+  useEffect(() => {
+    if (pending || !availability?.busy) return;
+    const timer = setTimeout(() => setStatusVersion((version) => version + 1), 3000);
+    return () => clearTimeout(timer);
+  }, [availability, pending, statusVersion]);
+
   const canAsk = availability?.enabled && availability.remaining > 0 && !availability.busy;
   const blocked = pending || checkingAvailability || !canAsk;
   const sources = answer?.sources.flatMap((source) => {
@@ -90,18 +107,20 @@ export function LeagueAnalyst({
     const controller = new AbortController();
     activeRequest.current = controller;
     setPending(true);
+    setElapsed(0);
+    setProgress("Preparing your league evidence...");
     setError("");
     setAnswer(null);
     try {
       const response = await fetch("/api/analyst", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", accept: "text/event-stream" },
         body: JSON.stringify({ season, week, teamId, question: trimmed }),
         signal: controller.signal,
       });
-      const payload = await response.json().catch(() => {
-        throw new Error("The answer could not be read. Please try again.");
-      });
+      const payload = response.ok && response.headers.get("content-type")?.includes("text/event-stream")
+        ? await readAnalystStream(response, setProgress)
+        : await response.json().catch(() => { throw new Error("The answer could not be read. Please try again."); });
       if (!response.ok || typeof payload.error === "string") {
         throw new Error(typeof payload.error === "string" ? payload.error : "The analyst could not answer. Please try again.");
       }
@@ -134,7 +153,7 @@ export function LeagueAnalyst({
 
   return <section className="week-analyst" aria-labelledby={`${id}-title`}>
     <h3 id={`${id}-title`}>Ask about {teamName}</h3>
-    <p className="week-analyst-intro">Ask the AI analyst a question about this matchup or your Week {week} lineup.</p>
+    <p className="week-analyst-intro">Plays, lineup decisions, or how your week could have gone differently.</p>
     <form onSubmit={submit} aria-busy={pending}>
       <div className="week-analyst-suggestions" aria-label="Suggested questions">
         {suggestions.map((suggestion) => <button key={suggestion} type="button" disabled={pending} onClick={() => {
@@ -157,17 +176,19 @@ export function LeagueAnalyst({
         required
       />
       <div className="week-analyst-actions">
-        <button className="week-analyst-submit" type="submit" disabled={blocked || !question.trim()}>{pending ? "Working on your question..." : "Ask the analyst"}</button>
-        <span id={`${id}-limit`}>{question.length} / 1200 characters</span>
+        <button className="week-analyst-submit" type="submit" disabled={blocked || !question.trim()}>{pending ? `Working · ${elapsed}s` : "Ask the analyst"}</button>
+        <span id={`${id}-limit`}>{question.length > 1000 ? `${1200 - question.length} characters left` : ""}</span>
       </div>
     </form>
     <div className="week-analyst-status" role="status">
-      {pending ? <p>Checking your question against the league data. This can take a moment.</p>
+      {pending ? <p>{progress}{elapsed >= 45 && <span> Taking longer than usual; the request is still open.</span>}</p>
         : checkingAvailability ? <p>Checking analyst availability...</p>
           : availabilityError ? <p>{availabilityError}</p>
             : !availability?.enabled ? <p>The analyst is unavailable right now.</p>
               : availability.remaining <= 0 ? <p>Today&apos;s question limit has been reached. Please come back tomorrow.</p>
-                : availability.busy ? <p>The analyst is answering another question. Check again shortly.</p>
+                : availability.busy ? <p>{availability.activity?.stage === "cleaning_up"
+                  ? "The previous request is closing. Availability refreshes automatically."
+                  : "An analysis is already running. Availability refreshes automatically."}</p>
                   : <p>{availability.remaining} of {availability.dailyLimit} questions remaining today.</p>}
       {!pending && !checkingAvailability && (availabilityError || !availability?.enabled || availability?.busy) && <button className="week-analyst-recheck" type="button" onClick={() => setStatusVersion((version) => version + 1)}>Check availability</button>}
     </div>

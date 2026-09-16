@@ -8,8 +8,9 @@ module.exports = {
     args: ["start", "--hostname", "127.0.0.1", "--port", "40435"],
     env: {
       NODE_ENV: "production",
-      FANTASY_NEXT_DIST_DIR: ".next-analyst",
+      FANTASY_NEXT_DIST_DIR: process.env.FANTASY_NEXT_DIST_DIR || ".next-analyst",
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      FANTASY_ANALYST_MODEL: process.env.FANTASY_ANALYST_MODEL || "gpt-6-astra",
       ESPN_SEASON: "2026",
       DATA_ROOT: path.join(__dirname, "data"),
       FANTASY_REPO_ROOT: __dirname,

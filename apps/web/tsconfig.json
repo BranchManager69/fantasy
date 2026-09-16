@@ -34,11 +34,15 @@
     ]
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    ".next-analyst/types/**/*.ts",
+    ".next-repair/types/**/*.ts",
+    ".next-studio-v2/types/**/*.ts",
+    ".next-studio/types/**/*.ts",
     ".next/types/**/*.ts",
-    ".next-analyst/types/**/*.ts"
+    "next-env.d.ts",
+    ".next-studio-release/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

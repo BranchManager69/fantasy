@@ -23,6 +23,8 @@ export type AnalystRunFields = {
   usage?: unknown;
   toolNames?: string[];
   cleanupVerified?: boolean;
+  stage?: string;
+  errorCode?: string;
 };
 
 export type AnalystRunReceipt = AnalystRunFields & {
@@ -143,6 +145,40 @@ export class AnalystBudget {
     return { remaining: Math.max(0, this.dailyLimit - used), dailyLimit: this.dailyLimit, busy };
   }
 
+  async activity(): Promise<{ stage: string; elapsedMs: number } | null> {
+    try {
+      const owner = JSON.parse(await fs.readFile(path.join(this.lockDirectory, "owner.json"), "utf8"));
+      if (!/^[0-9a-f-]{36}$/.test(owner.runId)) return null;
+      const receipt = JSON.parse(await fs.readFile(path.join(this.directory, "runs", `${owner.runId}.json`), "utf8")) as AnalystRunReceipt;
+      return { stage: receipt.stage ?? "creating", elapsedMs: Math.max(0, this.now().getTime() - Date.parse(receipt.createdAt)) };
+    } catch (error) {
+      if (errorCode(error) === "ENOENT") return null;
+      throw error;
+    }
+  }
+
+  /** Internal cleanup metadata; callers must not expose remote identifiers to the UI. */
+  async activeReceipt(): Promise<AnalystRunReceipt | null> {
+    try {
+      const owner = JSON.parse(await fs.readFile(path.join(this.lockDirectory, "owner.json"), "utf8"));
+      if (typeof owner?.runId !== "string" || !/^[0-9a-f-]{36}$/.test(owner.runId)) {
+        throw new AnalystBudgetError("invalid_receipt", "Invalid active analyst reservation.");
+      }
+      const receipt = JSON.parse(await fs.readFile(path.join(this.directory, "runs", `${owner.runId}.json`), "utf8")) as AnalystRunReceipt;
+      if (receipt?.version !== 1 || receipt.runId !== owner.runId
+        || !Number.isFinite(Date.parse(receipt.createdAt)) || !Number.isFinite(Date.parse(receipt.updatedAt))) {
+        throw new AnalystBudgetError("invalid_receipt", "Invalid active analyst receipt.");
+      }
+      if (receipt.sessionId !== undefined) identifier(receipt.sessionId, "session identifier");
+      if (receipt.turnId !== undefined) identifier(receipt.turnId, "turn identifier");
+      return receipt;
+    } catch (error) {
+      if (errorCode(error) === "ENOENT") return null;
+      if (error instanceof AnalystBudgetError) throw error;
+      throw new AnalystBudgetError("unavailable", "The active analyst receipt cannot be read.");
+    }
+  }
+
   async reserve(): Promise<string> {
     await fs.mkdir(path.join(this.directory, "runs"), { recursive: true, mode: 0o700 });
     try { await fs.mkdir(this.lockDirectory, { mode: 0o700 }); }
@@ -199,6 +235,8 @@ export class AnalystBudget {
       }
       if (fields.turnId !== undefined) receipt.turnId = identifier(fields.turnId, "turn identifier");
       if (fields.status !== undefined) receipt.status = identifier(fields.status, "status", 80);
+      if (fields.stage !== undefined) receipt.stage = identifier(fields.stage, "stage", 80);
+      if (fields.errorCode !== undefined) receipt.errorCode = identifier(fields.errorCode, "error code", 160);
       if (fields.usage !== undefined) receipt.usage = fields.usage === null ? null : numericUsage(fields.usage);
       if (fields.toolNames !== undefined) {
         if (!Array.isArray(fields.toolNames) || fields.toolNames.length > 64) throw new AnalystBudgetError("invalid_receipt", "Too many analyst tool names.");

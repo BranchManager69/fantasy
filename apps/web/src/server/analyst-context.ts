@@ -4,9 +4,11 @@ import { parse } from "csv-parse/sync";
 import type { AgentToolParam } from "openai/resources/beta/agents/agents";
 import { loadLeagueWeek, type WeekPlayer, type WeekTeam } from "@/lib/league-week";
 import { getDataRoot } from "@/lib/paths";
+import { compactLeagueTimeline, loadLeagueTimeline } from "./analyst-timeline";
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_RESULT_BYTES = 32 * 1024;
+const MAX_INITIAL_BYTES = 16 * 1024;
 const MAX_PLAYS = 8;
 type Source = { label: string; url: string };
 type CsvRow = Record<string, string>;
@@ -20,6 +22,16 @@ const tools: AgentToolParam[] = [
   {
     type: "function", name: "get_bench_alternatives",
     description: "Get up to eight eligible single bench-to-starter swaps, ranked by the retrospective score difference. These use final points and recorded slot eligibility; they do not establish what a manager should have known or whether a kickoff-time swap was possible. A points tie does not establish the official tiebreak result.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function", name: "get_best_lineup",
+    description: "Get the exact highest-scoring complete lineup from this team's historical starters and true bench, with legal slot assignments, concrete player changes, and comparison against the opponent's actual score. Includes coordinated position moves that a single swap misses. Retrospective final-points evidence, not a pregame recommendation or proof a late swap was possible.",
+    parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
+  },
+  {
+    type: "function", name: "get_league_timeline",
+    description: "Get this week's observed NFL game sequence, league-wide starter coverage, players remaining at the latest game's first observed play, and the selected matchup's chronological notable plays. Also explains automatic feature ranking. Remaining players do not establish an undecided matchup. Whole-league fantasy scores and win probabilities are not reconstructed play by play.",
     parameters: { type: "object", properties: {}, required: [], additionalProperties: false },
   },
   {
@@ -124,6 +136,109 @@ function benchAlternatives(team: WeekTeam, opponent: WeekTeam) {
     alternatives: alternatives.slice(0, 8), caveat };
 }
 
+const LINEUP_CAVEAT = "Exact retrospective assignment using final ESPN points, recorded position eligibility, and the historical starter slots. Only historical starters and true bench players (slot 20) are candidates; reserve/IR are excluded. The opponent keeps its actual lineup. This does not reconstruct kickoff locks, available information before games, transactions, or official tie-breaking.";
+
+/** Maximum-weight bipartite assignment, with each player used at most once.
+ * Slot-mask DP is exact, including FLEX moves; a greedy positional sort is not.
+ */
+export function bestLegalLineup(team: WeekTeam, opponent: WeekTeam, requiredSlotIds?: number[]) {
+  const unavailable = (reason: string) => ({ available: false as const, reason, caveat: LINEUP_CAVEAT });
+  if (!team.final || !opponent.final || !team.lineupReconciled || !opponent.lineupReconciled) {
+    return unavailable("Final, reconciled historical lineups are required");
+  }
+  const slots = team.players.filter((p) => p.starter).sort((a, b) => a.slotId - b.slotId || a.id - b.id);
+  if (!slots.length || slots.length > 16) return unavailable("Supported complete lineups require 1–16 starter slots");
+  if (requiredSlotIds && (requiredSlotIds.length !== slots.length
+    || [...requiredSlotIds].sort((a, b) => a - b).some((id, index) => id !== slots[index].slotId))) {
+    return unavailable("The recorded starters do not fill the configured lineup slots");
+  }
+  const candidates = team.players.filter((p) => p.starter || p.slotId === 20).sort((a, b) => a.id - b.id);
+  if (new Set(candidates.map((p) => p.id)).size !== candidates.length) return unavailable("Duplicate historical player IDs");
+  if (slots.some((p) => !p.eligibleSlots.includes(p.slotId))) return unavailable("A recorded starter's eligibility does not include its slot");
+  const eligible = candidates.filter((p) => slots.some((slot) => p.eligibleSlots.includes(slot.slotId)));
+  if (eligible.some((p) => p.points === null || !Number.isFinite(p.points))) {
+    return unavailable("An eligible historical player has no verified final score; the maximum cannot be proved");
+  }
+  const cents = (value: number) => Math.round(value * 100);
+  if (cents(slots.reduce((sum, p) => sum + p.points!, 0)) !== cents(team.score)) {
+    return unavailable("The historical starter scores do not reconcile to the official total");
+  }
+  type Assignment = { points: number; changes: number; playerIds: number[] };
+  const states: (Assignment | undefined)[] = Array(1 << slots.length);
+  states[0] = { points: 0, changes: 0, playerIds: Array(slots.length).fill(0) };
+  function preferred(next: Assignment, previous: Assignment | undefined) {
+    if (!previous) return true;
+    if (next.points !== previous.points) return next.points > previous.points;
+    if (next.changes !== previous.changes) return next.changes < previous.changes;
+    for (let i = 0; i < slots.length; i++) {
+      if (next.playerIds[i] !== previous.playerIds[i]) return next.playerIds[i] < previous.playerIds[i];
+    }
+    return false;
+  }
+  for (const player of eligible) {
+    // Descending masks prevent reusing this player in a state created on this iteration.
+    for (let mask = states.length - 1; mask >= 0; mask--) {
+      const previous = states[mask];
+      if (!previous) continue;
+      for (let slot = 0; slot < slots.length; slot++) {
+        if ((mask & (1 << slot)) || !player.eligibleSlots.includes(slots[slot].slotId)) continue;
+        const next = { points: previous.points + cents(player.points!),
+          changes: previous.changes + Number(player.id !== slots[slot].id), playerIds: [...previous.playerIds] };
+        next.playerIds[slot] = player.id;
+        const nextMask = mask | (1 << slot);
+        if (preferred(next, states[nextMask])) states[nextMask] = next;
+      }
+    }
+  }
+  const optimum = states[states.length - 1];
+  if (!optimum) return unavailable("No complete eligible lineup can be assigned");
+  const byId = new Map(eligible.map((p) => [p.id, p]));
+  const selected = new Set(optimum.playerIds);
+  const playerSummary = (p: WeekPlayer) => ({ id: p.id, name: clip(p.name), points: p.points });
+  const counts = new Map<number, number>();
+  const lineup = slots.map((slot, index) => {
+    const instance = (counts.get(slot.slotId) ?? 0) + 1;
+    counts.set(slot.slotId, instance);
+    const player = byId.get(optimum.playerIds[index])!;
+    return { slot_instance: `${slot.slotId}:${instance}`, slot_id: slot.slotId, slot: clip(slot.slot, 30),
+      player: playerSummary(player), original_player: playerSummary(slot), changed: player.id !== slot.id };
+  });
+  ensure(new Set(lineup.map((s) => s.player.id)).size === slots.length
+    && lineup.every((s) => byId.get(s.player.id)!.eligibleSlots.includes(s.slot_id))
+    && lineup.reduce((sum, s) => sum + cents(s.player.points!), 0) === optimum.points,
+  "Optimal lineup failed independent eligibility and score verification");
+  const margin = optimum.points - cents(opponent.score);
+  return { available: true as const, algorithm: "exact_slot_assignment" as const,
+    official_score: team.score, opponent_score: opponent.score,
+    optimal_score: optimum.points / 100, improvement: (optimum.points - cents(team.score)) / 100,
+    margin: margin / 100, points_comparison: margin === 0 ? "tied_on_points" : margin > 0 ? "ahead_on_points" : "behind_on_points",
+    can_outscore_opponent: margin > 0, lineup, changes: lineup.filter((s) => s.changed),
+    promoted_bench: eligible.filter((p) => !p.starter && selected.has(p.id)).map(playerSummary),
+    benched_starters: slots.filter((p) => !selected.has(p.id)).map(playerSummary),
+    starter_slot_moves: lineup.filter((s) => byId.get(s.player.id)!.starter && byId.get(s.player.id)!.slotId !== s.slot_id)
+      .map((s) => ({ player: s.player, from_slot_id: byId.get(s.player.id)!.slotId, to_slot_id: s.slot_id, to_slot: s.slot })),
+    candidate_count: eligible.length, slots_verified_against_settings: Boolean(requiredSlotIds), caveat: LINEUP_CAVEAT };
+}
+
+async function historicalSlotIds(root: string, season: number, week: number): Promise<number[] | undefined> {
+  const filename = path.join(root, "raw", "espn", String(season), `view-mMatchupScore-week-${week}.json`);
+  if (!await checkSize(filename, true)) return undefined;
+  const snapshot = JSON.parse(await fs.readFile(filename, "utf8"));
+  ensure(snapshot.seasonId === season && snapshot.scoringPeriodId === week, "Historical slot settings do not match the selected week");
+  const counts = snapshot.settings?.rosterSettings?.lineupSlotCounts;
+  if (!counts || typeof counts !== "object" || Array.isArray(counts)) return undefined;
+  const slots: number[] = [];
+  for (const [key, value] of Object.entries(counts)) {
+    const id = Number(key);
+    if ([20, 21, 25, 26, 27].includes(id)) continue;
+    ensure(Number.isInteger(id) && id >= 0 && typeof value === "number"
+      && Number.isInteger(value) && value >= 0 && value <= 16, "Invalid historical lineup slot count");
+    slots.push(...Array(value).fill(id));
+  }
+  ensure(slots.length <= 16, "Too many historical starter slots");
+  return slots;
+}
+
 const PBP_COLUMNS = ["season", "week", "season_type", "game_id", "play_id", "game_date", "time_of_day",
   "qtr", "time", "desc", "play_type", "play_deleted", "touchdown", "interception", "fumble_lost",
   "yards_gained", "passer_player_id", "rusher_player_id", "receiver_player_id", "fumbled_1_player_id", "fumbled_2_player_id"];
@@ -187,6 +302,8 @@ export async function createAnalystContext(season: number, week: number, teamId:
   tools: AgentToolParam[];
   call(name: string, args: unknown): Promise<unknown>;
   sources: Source[];
+  initialEvidence: string;
+  initialEvidenceBytes: number;
 }> {
   ensure(Number.isInteger(season) && season >= 2000 && season <= 2100
     && Number.isInteger(week) && week >= 1 && week <= 18
@@ -223,11 +340,17 @@ export async function createAnalystContext(season: number, week: number, teamId:
     caveat: "Cached historical evidence, not live scores. NFL and fantasy stats may receive corrections. Retrospective arithmetic does not establish what managers knew before kickoff.", sources };
   const starterNames = new Map([team, opponent].map((t) => [t.id, new Set(t.players.filter((p) => p.starter).map((p) => p.name))]));
   const verified = moments?.moments.filter((m) => starterNames.get(m.team_id)?.has(m.player_name)) ?? [];
+  const requiredSlots = await historicalSlotIds(root, season, week);
+  const bestLineup = requiredSlots ? bestLegalLineup(team, opponent, requiredSlots)
+    : { available: false as const, reason: "Historical starter slot settings are unavailable; a complete legal lineup cannot be proved", caveat: LINEUP_CAVEAT };
+  const timelineEvidence = loadLeagueTimeline(root, report).then((value) => ({ available: true as const,
+    ...compactLeagueTimeline(value, teamId) })).catch(() => ({ available: false as const,
+    note: "Cached whole-week sequence is unavailable or could not be verified. Do not infer game completion or remaining starters." }));
   let playResult: Promise<unknown> | undefined;
 
-  return {
+  const api = {
     tools, sources,
-    async call(name, args) {
+    async call(name: string, args: unknown): Promise<unknown> {
       ensure(args === undefined || args === null || (typeof args === "object" && !Array.isArray(args)
         && Object.keys(args).length === 0), "This tool accepts no arguments; team and week are fixed");
       let payload: unknown;
@@ -238,6 +361,12 @@ export async function createAnalystContext(season: number, week: number, teamId:
           break;
         case "get_bench_alternatives":
           payload = { ...context, ...benchAlternatives(team, opponent) };
+          break;
+        case "get_best_lineup":
+          payload = { ...context, ...bestLineup };
+          break;
+        case "get_league_timeline":
+          payload = { ...context, ...await timelineEvidence };
           break;
         case "get_game_moments":
           if (verified.length) {
@@ -267,4 +396,42 @@ export async function createAnalystContext(season: number, week: number, teamId:
       return payload;
     },
   };
+  const [momentEvidence, timeline] = await Promise.all([
+    api.call("get_game_moments", {}) as Promise<Record<string, unknown>>, timelineEvidence,
+  ]);
+  const compactTeam = (value: WeekTeam) => ({ id: value.id, name: clip(value.name), score: value.score,
+    result: value.result, final: value.final, lineup_reconciled: value.lineupReconciled,
+    all_play: report.complete ? value.allPlay : null,
+    starters: value.players.filter((p) => p.starter).map((p) => ({ id: p.id, name: clip(p.name), slot: p.slot, points: p.points })) });
+  const seed = {
+    schema: "fantasy_analyst_initial_evidence", version: 1,
+    evidenceKind: "cached_historical_league_evidence",
+    selection: { season, week, teamId, matchupId: team.matchupId },
+    snapshot_generated_at: context.snapshot_generated_at, snapshot_age_hours: context.snapshot_age_hours,
+    caveat: context.caveat, sources,
+    matchup: { week_complete: report.complete, selected: compactTeam(team), opponent: compactTeam(opponent) },
+    best_lineup: bestLineup.available ? { ...bestLineup,
+      lineup: bestLineup.lineup.map((s) => ({ slot: s.slot, slot_id: s.slot_id, player: s.player })) } : bestLineup,
+    league_timeline: timeline.available ? { available: true, coverage: timeline.coverage,
+      latest_game_id: timeline.latest_game_id, latest_game_first_observed_at: timeline.latest_game_first_observed_at,
+      matchups_with_players_in_latest_window: timeline.matchups_with_players_in_latest_window,
+      league_matchups_at_latest_game: timeline.league_matchups_at_latest_game,
+      selected_matchup: timeline.selected_matchup, selected_feature: timeline.selected_feature,
+      ranking_method: timeline.ranking_method, caveat: timeline.caveat } : timeline,
+    game_moments: { available: momentEvidence.available, evidence_kind: momentEvidence.evidence_kind,
+      lead: momentEvidence.lead, note: momentEvidence.note,
+      moments: Array.isArray(momentEvidence.moments) ? momentEvidence.moments.slice(0, 4).map((m) => ({
+        ...m, description: clip(m.description, 650), note: clip(m.note, 300),
+      })) : [],
+      full_moment_count: Array.isArray(momentEvidence.moments) ? momentEvidence.moments.length : 0 },
+  };
+  let initialEvidence = JSON.stringify(seed);
+  if (Buffer.byteLength(initialEvidence, "utf8") > MAX_INITIAL_BYTES) {
+    seed.game_moments.moments = seed.game_moments.moments.slice(0, 1);
+    seed.matchup.selected.starters = [];
+    seed.matchup.opponent.starters = [];
+    initialEvidence = JSON.stringify({ ...seed, omitted_detail: "Full lineups and additional moments are available through the tools" });
+  }
+  ensure(Buffer.byteLength(initialEvidence, "utf8") <= MAX_INITIAL_BYTES, "Initial league evidence exceeds the supported size limit");
+  return { ...api, initialEvidence, initialEvidenceBytes: Buffer.byteLength(initialEvidence, "utf8") };
 }
