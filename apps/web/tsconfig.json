@@ -43,7 +43,8 @@
     ".next-studio/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-replay-v1/types/**/*.ts"
+    ".next-replay-v1/types/**/*.ts",
+    ".next-photo-library/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
