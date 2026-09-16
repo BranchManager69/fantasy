@@ -24,6 +24,7 @@ apps/web/.next-ai/
 apps/web/.next-analyst/
 apps/web/.next-*/
 apps/web/.turbo/
+apps/web/.phone-build/
 
 # Project data
 .env

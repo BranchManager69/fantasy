@@ -57,6 +57,8 @@ Production uses the built Next.js application under PM2. Rebuild and restart the
 
 ## AI analyst
 
+The optional [postgame phone reporter](docs/interviews.md) uses GPT-Live 1 to interview an owner about a completed matchup. It prepares the football evidence before dialing and can research follow-up claims during the call. The current calling flow is restricted to the configured test recipient.
+
 Supply `OPENAI_API_KEY` in the web process environment. It stays on the server and is never sent to the hosted workspace or browser. The key needs Agents API access and inference permission. The question form makes a model request only when submitted.
 
 Each question receives verified matchup, complete legal-lineup optimization and game evidence before its OpenAI-hosted session starts. Application functions remain available for further research. The writer can also search the web for relevant NFL reporting and source links. Sandbox network access and subagents remain disabled. `FANTASY_ANALYST_MODEL` selects the writer independently of the evidence pipeline; its editorial instructions live in `analyst-writer.ts`.

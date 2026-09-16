@@ -9,7 +9,10 @@
     "test:analyst": "tsx --test src/server/analyst-*.test.ts src/lib/analyst-stream.test.ts",
     "test:studio": "tsx --test src/server/league-studio-*.test.ts",
     "test:replay": "tsx --test src/server/week-replay.test.ts",
-    "test:league": "tsx --test src/server/league-overview.test.ts src/server/league-studio-public-media.test.ts"
+    "test:league": "tsx --test src/server/league-overview.test.ts src/server/league-studio-public-media.test.ts",
+    "build:interview": "node scripts/build-interview.mjs",
+    "test:interview": "tsx --test src/server/interview-*.test.ts",
+    "interview": "node .phone-build/interview-control.cjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -18,13 +21,17 @@
     "openai": "7.15.0",
     "react": "~19.1.9",
     "react-dom": "~19.1.9",
-    "sharp": "0.35.4"
+    "sharp": "0.35.4",
+    "twilio": "6.1.1",
+    "ws": "8.21.3"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "8.18.1",
     "autoprefixer": "^10.4.21",
+    "esbuild": "0.28.2",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.13",
     "tsx": "^4.23.13",
