@@ -202,7 +202,7 @@
   .week-league-stage .replay-team h3 { font-size:14px; min-height:2.6em; margin-top:12px; }
   .week-league-stage .replay-score { font-size:clamp(42px,12vw,58px); }
   .replay-team .league-image-set,.replay-team .league-image-lettering { height:120px; }
-  .replay-team .league-team-image figcaption { font-size:11px; }
+  .replay-team .league-team-image figcaption { font-size:11px; min-height:2.8em; }
   .week-league-stage .replay-final-context { font-size:13px; }
   .replay-score-leaders { gap:12px; margin-top:16px; padding-top:12px; }
   .replay-score-leaders .replay-leading-player { display:block; text-align:center; }
