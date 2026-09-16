@@ -141,7 +141,18 @@ function PhotoDialog({ photo, profiles, teams, players, panel, onPanelChange, on
   const meme = photo.memes[memeIndex];
   const fill = (text: string) => text.replace(/\[(PLAYER|POINTS|TEAM|OPPONENT)\]/g, (match, key: string) => ({ PLAYER: player, POINTS: points, TEAM: team, OPPONENT: opponent })[key as "PLAYER" | "POINTS" | "TEAM" | "OPPONENT"]?.trim() || match);
 
-  useEffect(() => { const node = dialog.current; node?.showModal(); const before = document.body.style.overflow; document.body.style.overflow = "hidden"; return () => { node?.close(); document.body.style.overflow = before; }; }, []);
+  useEffect(() => {
+    const node = dialog.current;
+    const previousFocus = document.activeElement;
+    const before = document.body.style.overflow;
+    node?.showModal();
+    document.body.style.overflow = "hidden";
+    return () => {
+      node?.close();
+      document.body.style.overflow = before;
+      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+    };
+  }, []);
   useEffect(() => { if (!cutoutFile) { setCutoutPreview(""); return; } const url = URL.createObjectURL(cutoutFile); setCutoutPreview(url); return () => URL.revokeObjectURL(url); }, [cutoutFile]);
   useEffect(() => { if (focusNewName) { lastNameInput.current?.focus(); setFocusNewName(false); } }, [labels.length, focusNewName]);
   const close = () => { if (dirty) setDiscard(true); else onClose(); };
