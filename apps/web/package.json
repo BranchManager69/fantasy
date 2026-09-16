@@ -5,12 +5,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:analyst": "tsx --test src/server/analyst-*.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "csv-parse": "^7.0.2",
     "next": "^15.5.25",
+    "openai": "7.15.0",
     "react": "~19.1.9",
     "react-dom": "~19.1.9"
   },
@@ -21,6 +23,7 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.13",
+    "tsx": "^4.23.13",
     "typescript": "5.9.2"
   },
   "overrides": {

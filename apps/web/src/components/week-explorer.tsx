@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LeagueWeek, WeekTeam } from "@/lib/league-week";
+import { LeagueAnalyst } from "@/components/league-analyst";
 
 const points = (value: number | null) => value === null ? "N/A" : value.toFixed(1);
 const signed = (value: number) => `${value > 0 ? "+" : ""}${points(value)}`;
@@ -66,6 +67,7 @@ export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; in
           {report.teams.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
         </select></label>
       </div>
+      <LeagueAnalyst key={`${report.season}-${report.week}-${team.id}`} season={report.season} week={report.week} teamId={team.id} teamName={team.name} />
       <div className="week-workspace">
         <div>
           <div className="week-official-result">

@@ -20,6 +20,8 @@ npm-debug.log*
 .next/
 apps/web/node_modules/
 apps/web/.next/
+apps/web/.next-ai/
+apps/web/.next-analyst/
 apps/web/.turbo/
 
 # Project data
