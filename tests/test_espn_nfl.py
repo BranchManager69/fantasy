@@ -1,11 +1,30 @@
 import pytest
+import httpx
 
 from fantasy_nfl.espn_nfl import (
     NFLGameState,
     calculate_game_completion,
     calculate_live_projection,
+    fetch_nfl_scoreboard,
     parse_clock_to_seconds,
 )
+
+
+def test_scoreboard_request_uses_requested_season(monkeypatch):
+    requested = []
+
+    def respond(request):
+        requested.append(dict(request.url.params))
+        return httpx.Response(200, json={"season": {"year": 2026}, "events": []})
+
+    client_type = httpx.Client
+    monkeypatch.setattr(
+        httpx, "Client", lambda **kwargs: client_type(transport=httpx.MockTransport(respond), **kwargs)
+    )
+    result = fetch_nfl_scoreboard(week=1, season=2026)
+
+    assert requested == [{"dates": "2026", "seasontype": "2", "week": "1"}]
+    assert result["season"]["year"] == 2026
 
 
 def test_parse_clock_to_seconds():
@@ -57,5 +76,3 @@ def test_calculate_live_projection():
     # Final
     gs.completion_pct = 1.0
     assert calculate_live_projection(18.0, 20.0, gs) == 18.0
-
-

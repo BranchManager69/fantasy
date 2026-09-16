@@ -43,7 +43,7 @@ LINEUP_SLOT_NAMES: Dict[int, str] = {
 
 POSITION_NAMES: Dict[int, str] = {
     0: "QB",
-    1: "TQB",
+    1: "QB",
     2: "RB",
     3: "WR",
     4: "TE",
@@ -54,6 +54,7 @@ POSITION_NAMES: Dict[int, str] = {
     9: "LB",
     10: "DB",
     11: "HC",
+    16: "D/ST",
 }
 
 

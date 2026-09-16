@@ -5,6 +5,7 @@ __pycache__/
 
 # Virtual envs
 .venv/
+.venv
 env/
 venv/
 
@@ -34,6 +35,8 @@ data/history/
 .pytest_cache/
 .coverage
 htmlcov/
+output/playwright/
+.playwright-cli/
 
 # Editors
 .idea/

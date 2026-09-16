@@ -2,9 +2,10 @@ import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 
 import type { JobSnapshot } from "@/types/sim-status";
+import { getRepoRoot } from "@/lib/paths";
 
 const MAX_LOG_LINES = 200;
-const REPO_ROOT = path.resolve(process.cwd(), "../../");
+const REPO_ROOT = getRepoRoot();
 const BASELINE_SCENARIO_ID = "baseline";
 
 function shellEscape(value: string): string {
@@ -12,9 +13,9 @@ function shellEscape(value: string): string {
 }
 
 function buildSimCommand(scenarioId?: string | null): string {
-// `npm run refresh-all` auto-detects the active matchup period and projection window,
-// so we keep the command free of hard-coded week arguments.
-const baseCommand = "npm run refresh-all && poetry run fantasy sim rest-of-season --simulations 500";
+  const python = process.env.FANTASY_PYTHON || path.join(REPO_ROOT, ".venv/bin/python");
+  const cli = `${shellEscape(python)} -c ${shellEscape("from fantasy_nfl.cli import cli; cli()")}`;
+  const baseCommand = `${cli} refresh-all && ${cli} sim rest-of-season --simulations 500`;
   if (!scenarioId || scenarioId.toLowerCase() === BASELINE_SCENARIO_ID) {
     return baseCommand;
   }

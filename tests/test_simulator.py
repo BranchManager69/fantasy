@@ -72,6 +72,10 @@ def create_minimal_artifacts(base_dir: Path) -> None:
     espn_out = base_dir / "out" / "espn" / "2025"
     write_csv(espn_out / "teams.csv", teams_rows)
     write_csv(espn_out / "schedule.csv", schedule_rows)
+    write_csv(espn_out / "league_settings.csv", [{
+        "playoff_team_count": 1,
+        "regular_season_matchups": 2,
+    }])
 
     projections_dir = base_dir / "out" / "projections" / "2025"
 
@@ -212,7 +216,7 @@ def test_simulator_default_start_week_skips_completed(tmp_path: Path) -> None:
     data_root = tmp_path / "data"
     create_minimal_artifacts(data_root)
 
-    # Mark week 1 as completed by creating weekly_scores file
+    # A score file alone is not final; the league's matchup winner settles it.
     espn_out = data_root / "out" / "espn" / "2025"
     write_csv(
         espn_out / "weekly_scores_2025_week_1.csv",
@@ -223,6 +227,10 @@ def test_simulator_default_start_week_skips_completed(tmp_path: Path) -> None:
             }
         ],
     )
+    schedule_path = espn_out / "schedule.csv"
+    schedule = pd.read_csv(schedule_path)
+    schedule.loc[schedule["week"] == 1, ["winner", "home_points", "away_points"]] = ["HOME", 120, 100]
+    schedule.to_csv(schedule_path, index=False)
 
     settings = sample_settings(data_root)
     simulator = RestOfSeasonSimulator(settings)
@@ -231,6 +239,104 @@ def test_simulator_default_start_week_skips_completed(tmp_path: Path) -> None:
 
     assert dataset["start_week"] == 2
     assert dataset["end_week"] == 2
+
+
+def test_live_score_file_does_not_remove_week_from_standings_or_simulation(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    create_minimal_artifacts(data_root)
+    espn_out = data_root / "out" / "espn" / "2025"
+    write_csv(espn_out / "weekly_scores_2025_week_1.csv", [
+        {"team_id": 1, "espn_player_id": 11, "score_total": 7, "counts_for_score": True},
+        {"team_id": 2, "espn_player_id": 21, "score_total": 3, "counts_for_score": True},
+    ])
+    simulator = RestOfSeasonSimulator(sample_settings(data_root))
+    dataset = simulator.build_dataset(season=2025, sim_iterations=100, random_seed=7)
+
+    assert dataset["start_week"] == 1
+    assert dataset["completed_weeks"] == []
+    for standing in dataset["standings"]:
+        record = standing["projected_record"]
+        assert record["wins"] + record["losses"] == pytest.approx(2.0)
+        assert standing["games_remaining"] == 2
+    for entry in dataset["monte_carlo"]["teams"]:
+        assert entry["average_wins"] + entry["average_losses"] == pytest.approx(2.0)
+
+
+def test_explicit_range_keeps_final_results_without_player_score_artifacts(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    create_minimal_artifacts(data_root)
+    schedule_path = data_root / "out" / "espn" / "2025" / "schedule.csv"
+    schedule = pd.read_csv(schedule_path)
+    schedule.loc[schedule["week"] == 1, ["winner", "home_points", "away_points"]] = ["HOME", 120, 100]
+    schedule.to_csv(schedule_path, index=False)
+    simulator = RestOfSeasonSimulator(sample_settings(data_root))
+    dataset = simulator.build_dataset(
+        season=2025, start_week=1, end_week=2, sigma=0, sim_iterations=10, random_seed=7,
+    )
+
+    assert dataset["completed_weeks"] == [1]
+    week1 = dataset["weeks"][0]["matchups"][0]
+    assert week1["is_actual"] is True
+    assert week1["final_score"] == {"home": 120, "away": 100}
+    alpha = next(entry for entry in dataset["monte_carlo"]["teams"] if entry["team"]["team_id"] == 1)
+    assert alpha["average_wins"] == 2
+    assert alpha["average_losses"] == 0
+
+    completed_only = simulator.build_dataset(
+        season=2025, start_week=1, end_week=1, sim_iterations=10, random_seed=7,
+    )
+    assert completed_only["start_week"] == completed_only["end_week"] == 1
+    assert completed_only["sources"]["projections_weeks"] == []
+    assert all(entry["games_remaining"] == 0 for entry in completed_only["standings"])
+
+
+def test_fresh_season_horizon_comes_from_league_settings(tmp_path: Path) -> None:
+    data_root = tmp_path / "data"
+    settings = sample_settings(data_root, season=2026)
+    write_csv(data_root / "out" / "espn" / "2026" / "league_settings.csv", [{
+        "playoff_team_count": 6, "regular_season_matchups": 14, "size": 14,
+    }])
+    simulator = RestOfSeasonSimulator(settings)
+
+    assert simulator._detect_projection_weeks(2026) == []
+    assert simulator.regular_season_end_week(2026) == 14
+
+
+@pytest.mark.parametrize("week_args, expected_end", [
+    ([], 14),
+    (["--week", "2"], 2),
+    (["--start-week", "2", "--end-week", "4"], 4),
+])
+def test_fresh_2026_refresh_builds_requested_horizon(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, week_args: list[str], expected_end: int,
+) -> None:
+    from click.testing import CliRunner
+    import fantasy_nfl.cli as cli_module
+
+    data_root = tmp_path / "data"
+    settings = sample_settings(data_root, season=2026)
+    write_csv(data_root / "out" / "espn" / "2026" / "league_settings.csv", [{
+        "playoff_team_count": 6, "regular_season_matchups": 14, "size": 14,
+    }])
+    monkeypatch.setattr(cli_module, "get_settings", lambda _: settings)
+    monkeypatch.setattr(cli_module.refresh_week, "callback", lambda **_: 2)
+    calls: dict[str, list[dict]] = {}
+
+    def record(name: str):
+        def callback(**kwargs):
+            calls.setdefault(name, []).append(kwargs)
+        return callback
+
+    for name in ("projections_baseline", "projections_apply", "calc_trade_chart", "calc_redraft_rankings", "sim_rest_of_season"):
+        monkeypatch.setattr(getattr(cli_module, name), "callback", record(name))
+
+    result = CliRunner().invoke(cli_module.cli, ["refresh-all", "--season", "2026", *week_args])
+
+    assert result.exit_code == 0, result.output
+    baseline = calls["projections_baseline"][0]
+    assert (baseline["season"], baseline["start_week"], baseline["end_week"]) == (2026, 2, expected_end)
+    assert [call["week"] for call in calls["projections_apply"]] == list(range(2, expected_end + 1))
+    assert calls["sim_rest_of_season"][0]["end_week"] == expected_end
 
 
 def test_simulator_monte_carlo_summary(tmp_path: Path) -> None:

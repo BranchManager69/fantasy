@@ -1,180 +1,58 @@
-import { AppNav } from "@/components/app-nav";
-import { HighlightCards, buildHighlightCards } from "@/components/simulation/highlight-cards";
-import { SimulationHeader } from "@/components/simulation/simulation-header";
-import { SimulationLegend } from "@/components/simulation/simulation-legend";
-import { SimulationMatrix } from "@/components/simulation/simulation-matrix";
-import type { SimulationTeamContext } from "@/components/simulation/types";
-import { LiveActivityFeed } from "@/components/live-activity-feed";
-import { PowerRankings, type PowerRankingEntry } from "@/components/power-rankings";
-import { ScenarioDrawer } from "@/components/scenario-drawer";
-import { BASELINE_SCENARIO_ID } from "@/lib/scenario-constants";
-import { listScenarios } from "@/lib/scenario-data";
-import { normalizeScenarioId, type ScenarioSearchParam } from "@/lib/scenario-utils";
-import {
-  buildSimulationLookup,
-  getLatestSimulation,
-  getPreviousSimulationSnapshot,
-  getTeamSchedule,
-  type SimulationLookup,
-  type RestOfSeasonSimulation,
-} from "@/lib/simulator-data";
-import { computeTeamMetrics } from "@/lib/team-metrics";
+import Link from "next/link";
+import { WeekExplorer } from "@/components/week-explorer";
+import { loadLeagueWeek } from "@/lib/league-week";
+import "./week.css";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type PageSearchParams = {
-  scenario?: ScenarioSearchParam;
-};
+type SearchParams = { team?: string; season?: string; week?: string };
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: Promise<PageSearchParams>;
-}) {
-  const resolvedParams = searchParams ? await searchParams : undefined;
-  const requestedScenario = normalizeScenarioId(resolvedParams?.scenario);
+export default async function Home({ searchParams }: { searchParams?: Promise<SearchParams> }) {
+  const params = searchParams ? await searchParams : {};
+  const season = /^20\d{2}$/.test(params.season ?? "") ? Number(params.season) : 2026;
+  const week = /^(?:[1-9]|1[0-8])$/.test(params.week ?? "") ? Number(params.week) : 1;
+  const { report, moments } = await loadLeagueWeek(season, week);
+  if (!report) return <main className="week-page"><div className="week-wrap"><section className="week-empty">
+    <h1>That week is still on the way.</h1><p>The Week {week} report for {season} has not been prepared yet.</p><Link href="/">Return to Week 1</Link>
+  </section></div></main>;
+  const lead = moments?.lead;
+  const leadTeam = report.teams.find((team) => team.id === lead?.team_id);
+  const featuredTeams = lead ? report.teams.filter((team) => String(team.id) in lead.before) : [];
+  const selectedTeam = report.teams.find((team) => team.id === Number(params.team));
+  const updated = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(report.generatedAt));
 
-  let simulation = await getLatestSimulation(requestedScenario);
-  let activeScenarioId = requestedScenario;
+  return <main className="week-page"><div className="week-wrap">
+    <header className="week-masthead">
+      <Link href="/" className="week-brand">{report.leagueName}</Link>
+      <span className="week-edition">Week {report.week}, {report.season}</span>
+      <nav className="week-nav" aria-label="League navigation"><a href="#team-title">Explore your week</a><Link href="/season">Season outlook</Link></nav>
+    </header>
 
-  if (!simulation && requestedScenario !== BASELINE_SCENARIO_ID) {
-    simulation = await getLatestSimulation(BASELINE_SCENARIO_ID);
-    activeScenarioId = BASELINE_SCENARIO_ID;
-  }
+    <section className="week-hero" aria-labelledby="lead-title">
+      <div><h1 id="lead-title">{lead?.title ?? `Week ${report.week}, ${report.complete ? "in the books" : "as it stands"}.`}</h1>
+        <p className="week-deck">{lead?.summary ?? (report.complete ? `${report.teams.length} teams, ${report.matchups.length} matchups. Revisit the scores, compare every opponent, and try one different lineup decision.` : `Follow the scores and lineups across ${report.matchups.length} matchups as the week unfolds.`)}</p>
+      </div>
+      {lead && <aside className="week-play" aria-label="The featured play">
+        <h2>{lead.player_name}</h2>
+        <p className="week-play-context">{leadTeam?.name} · {lead.quarter > 4 ? "Overtime" : `Quarter ${lead.quarter}`} · {lead.clock}</p>
+        <p className="week-play-points">{lead.fantasy_points > 0 ? "+" : ""}{lead.fantasy_points.toFixed(1)}<span>fantasy points</span></p>
+        <table><caption className="sr-only">Reconstructed matchup score before and after the play</caption><thead><tr><th scope="col">Matchup</th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
+          <tbody>{featuredTeams.map((team) => <tr key={team.id}><td>{team.name}</td><td>{lead.before[String(team.id)].toFixed(1)}</td><td>{lead.after[String(team.id)].toFixed(1)}</td></tr>)}</tbody>
+        </table>
+        <p className="week-play-note">Scores reconstructed from corrected play-by-play and the official Week {report.week} lineups.</p>
+      </aside>}
+    </section>
 
-  if (!simulation) {
-    return (
-      <main className="shell">
-        <AppNav />
-        <section className="empty-state">
-          <h1>No simulation artifacts yet</h1>
-          <p>
-            Kick off a backend refresh to build the rest-of-season projection grid. Run
-            <code>poetry run fantasy refresh-all</code> and then reload this page.
-          </p>
-        </section>
-      </main>
-    );
-  }
+    {!!moments?.moments.length && <section className="week-other-moments" aria-label="More plays from the featured matchup">
+      {moments.moments.filter((moment) => moment.player_name !== lead?.player_name).map((moment) => <article key={moment.id}>
+        <h3>{moment.player_name}: {moment.fantasy_points > 0 ? "+" : ""}{moment.fantasy_points.toFixed(1)} points</h3>
+        <p>{moment.description}</p><details><summary>Scoring detail</summary><p>{moment.note}</p><a href={moment.source_url} target="_blank" rel="noreferrer">Play-by-play source</a></details>
+      </article>)}
+    </section>}
 
-  const lookup = buildSimulationLookup(simulation);
-  const previousSimulation = await getPreviousSimulationSnapshot(simulation, activeScenarioId);
-  const previousLookup = previousSimulation ? buildSimulationLookup(previousSimulation) : null;
-  const deltaContext = previousSimulation && previousLookup
-    ? {
-        simulation: previousSimulation,
-        lookup: previousLookup,
-      }
-    : undefined;
-  const weeks = [...new Set(simulation.weeks.map((week) => week.week))].sort((a, b) => a - b);
-  const firstWeek = weeks[0] ?? simulation.start_week;
-  const lastWeek = weeks[weeks.length - 1] ?? simulation.end_week;
+    <WeekExplorer report={report} initialTeamId={selectedTeam?.id ?? leadTeam?.id} />
 
-  const teamContexts = buildTeamContexts(simulation, lookup, deltaContext);
-  const scenarios = await listScenarios(simulation.season);
-  const currentWeek = findCurrentWeek(teamContexts, weeks);
-  const futureWeeks = weeks.filter((week) => week > currentWeek);
-  const powerRankings = buildPowerRankings(teamContexts, futureWeeks);
-  const highlightCards = buildHighlightCards(teamContexts);
-
-  return (
-    <main className="shell">
-      <AppNav />
-      <section
-        className="grid gap-7 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-[clamp(32px,4vw,40px)] shadow-[0_22px_60px_rgba(2,6,23,0.55)] backdrop-blur-[18px]"
-      >
-        <SimulationHeader
-          season={simulation.season}
-          firstWeek={firstWeek}
-          lastWeek={lastWeek}
-          weeksCount={simulation.weeks.length}
-          teamCount={simulation.teams.length}
-          monteCarlo={simulation.monte_carlo}
-          generatedAt={simulation.generated_at}
-          scenarios={scenarios}
-          activeScenarioId={activeScenarioId}
-        />
-
-        <ScenarioDrawer
-          season={simulation.season}
-          scenarios={scenarios}
-          activeScenarioId={activeScenarioId}
-        />
-
-        <LiveActivityFeed scenarioId={activeScenarioId} />
-
-        <HighlightCards cards={highlightCards} />
-
-        <PowerRankings rankings={powerRankings} />
-
-        <SimulationMatrix
-          weeks={weeks}
-          teamContexts={teamContexts}
-          scenarioId={activeScenarioId !== BASELINE_SCENARIO_ID ? activeScenarioId : undefined}
-        />
-
-        <SimulationLegend />
-      </section>
-    </main>
-  );
-}
-
-function buildTeamContexts(
-  simulation: RestOfSeasonSimulation,
-  lookup = buildSimulationLookup(simulation),
-  deltaContext?: {
-    simulation: RestOfSeasonSimulation;
-    lookup: SimulationLookup;
-  },
-): SimulationTeamContext[] {
-  return simulation.standings.map((entry) => {
-    const team = entry.team;
-    const schedule = getTeamSchedule(simulation, team.team_id, lookup, deltaContext);
-    const metrics = computeTeamMetrics(schedule);
-    const standing = lookup.standingsByTeamId.get(team.team_id) ?? null;
-    const monteCarloEntry = lookup.monteCarloByTeamId.get(team.team_id) ?? null;
-    return {
-      team,
-      schedule,
-      metrics,
-      standing,
-      monteCarlo: monteCarloEntry,
-    };
-  });
-}
-
-function findCurrentWeek(teamContexts: SimulationTeamContext[], weeks: number[]): number {
-  const completedWeeks = weeks.filter((week) =>
-    teamContexts.some((context) =>
-      context.schedule.some((game) => game.week === week && game.isActual === true),
-    ),
-  );
-  if (completedWeeks.length === 0) {
-    return 0;
-  }
-  return Math.max(...completedWeeks);
-}
-
-function buildPowerRankings(
-  teamContexts: SimulationTeamContext[],
-  futureWeeks: number[],
-): PowerRankingEntry[] {
-  return teamContexts
-    .map((context) => {
-      const futureGames = context.schedule.filter((game) => futureWeeks.includes(game.week));
-      const totalProjectedPoints = futureGames.reduce((sum, game) => sum + game.projected_points, 0);
-      const avgPPG = futureGames.length > 0 ? totalProjectedPoints / futureGames.length : 0;
-
-      return {
-        rank: 0,
-        team: context.team,
-        projectedPPG: avgPPG,
-      };
-    })
-    .sort((a, b) => b.projectedPPG - a.projectedPPG)
-    .map((entry, index) => ({
-      ...entry,
-      rank: index + 1,
-    }));
+    <footer className="week-footer"><span>Report prepared {updated} UTC.</span><a href={report.sourceUrl} target="_blank" rel="noreferrer">View the ESPN scoreboard</a>{lead && <a href={lead.source_url} target="_blank" rel="noreferrer">NFL play-by-play source</a>}</footer>
+  </div></main>;
 }

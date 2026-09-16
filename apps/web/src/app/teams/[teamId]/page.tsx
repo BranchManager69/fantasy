@@ -322,8 +322,8 @@ export default async function TeamPage({ params, searchParams }: TeamPageProps) 
   return (
     <main className="shell">
       <nav className="app-nav">
-        <Link href="/" className="app-nav__back">
-          ← Back to league dashboard
+        <Link href={`/season?scenario=${encodeURIComponent(activeScenarioId)}`} className="app-nav__back">
+          Back to season outlook
         </Link>
       </nav>
       <article className="grid gap-8 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-[clamp(32px,4vw,40px)] shadow-[0_22px_60px_rgba(2,6,23,0.55)] backdrop-blur-[18px]">

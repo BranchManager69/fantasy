@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fantasy League Engine",
-  description: "Frontend shell powered directly by the Fantasy League Engine data pipeline.",
+  title: "Mod League | The week in fantasy",
+  description: "The plays behind the results, your league's official lineups, and the bench decisions worth revisiting.",
 };
 
 export default function RootLayout({

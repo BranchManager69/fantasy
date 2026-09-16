@@ -15,7 +15,7 @@ from .settings import AppSettings
 LOGGER = logging.getLogger(__name__)
 
 PLAYER_MASTER_URL = "https://github.com/nflverse/nflverse-data/releases/download/players/players.csv.gz"
-WEEKLY_URL_TEMPLATE = "https://github.com/nflverse/nflverse-data/releases/download/player_stats/stats_player_week_{season}.csv.gz"
+WEEKLY_URL_TEMPLATE = "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{season}.csv.gz"
 
 REQUIRED_PLAYER_COLUMNS = {"gsis_id", "espn_id", "display_name"}
 REQUIRED_WEEKLY_COLUMNS = {"player_id", "season", "week"}

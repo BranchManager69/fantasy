@@ -58,9 +58,12 @@ def calculate_live_projection(actual_points: float, original_projection: float, 
     return actual_points + original_projection * (1.0 - c)
 
 
-def fetch_nfl_scoreboard(week: int) -> dict:
+def fetch_nfl_scoreboard(week: int, season: int) -> dict:
     with httpx.Client(timeout=httpx.Timeout(15.0)) as client:
-        resp = client.get(ESPN_NFL_SCOREBOARD_URL, params={"week": week})
+        resp = client.get(
+            ESPN_NFL_SCOREBOARD_URL,
+            params={"dates": season, "seasontype": 2, "week": week},
+        )
         resp.raise_for_status()
         return resp.json()
 

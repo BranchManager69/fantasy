@@ -19,6 +19,7 @@ STAT_COLUMNS = [
     "passing_int",
     "passing_two_point_conversion",
     "passing_long_td",
+    "passing_400_yard_game",
     "rushing_yards",
     "rushing_tds",
     "rushing_two_point_conversion",
@@ -28,6 +29,14 @@ STAT_COLUMNS = [
     "receiving_tds",
     "receiving_two_point_conversion",
     "receiving_long_td",
+    "kickoff_return_tds",
+    "punt_return_tds",
+    "fumble_recovery_tds",
+    "blocked_kick_return_tds",
+    "interception_return_tds",
+    "fumble_return_tds",
+    "two_point_returns",
+    "one_point_safeties",
     "fumbles_lost",
     "sacks",
     "fantasy_points",
@@ -39,17 +48,57 @@ ESPN_STAT_CODE_MAP = {
     "passing_yards": "3",
     "passing_tds": "4",
     "passing_int": "20",
+    "passing_two_point_conversion": "19",
     "passing_long_td": "16",  # 50+ yard passing TD bonus
+    "passing_400_yard_game": "18",
     "rushing_yards": "24",
     "rushing_tds": "25",
-    "rushing_two_point_conversion": "19",
+    "rushing_two_point_conversion": "26",
+    "rushing_long_td": "36",
     "receptions": "53",
     "receiving_yards": "42",
     "receiving_tds": "43",
     "receiving_two_point_conversion": "44",
     "receiving_long_td": "46",
     "fumbles_lost": "72",
+    "kickoff_return_tds": "101",
+    "punt_return_tds": "102",
+    "fumble_recovery_tds": "63",
+    "blocked_kick_return_tds": "93",
+    "interception_return_tds": "103",
+    "fumble_return_tds": "104",
+    "two_point_returns": "206",
+    "one_point_safeties": "209",
 }
+
+
+# nflverse's stats_player release uses these names; the scorer and historical
+# play-by-play artifacts use the names on the left. Normalize before selecting
+# STAT_COLUMNS so interceptions, conversions, and lost fumbles survive ingestion.
+NFLVERSE_STAT_ALIASES = {
+    "passing_int": "passing_interceptions",
+    "passing_two_point_conversion": "passing_2pt_conversions",
+    "rushing_two_point_conversion": "rushing_2pt_conversions",
+    "receiving_two_point_conversion": "receiving_2pt_conversions",
+    "fumbles_lost": "fumbles_lost_total",
+    "sacks": "sacks_suffered",
+}
+
+
+def normalize_weekly_stat_columns(weekly: pd.DataFrame) -> pd.DataFrame:
+    normalized = weekly.copy()
+    for target, source in NFLVERSE_STAT_ALIASES.items():
+        if source not in normalized.columns:
+            continue
+        values = pd.to_numeric(normalized[source], errors="coerce")
+        if target in normalized.columns:
+            normalized[target] = pd.to_numeric(normalized[target], errors="coerce").fillna(values)
+        else:
+            normalized[target] = values
+    if "passing_400_yard_game" not in normalized.columns and "passing_yards" in normalized.columns:
+        yards = pd.to_numeric(normalized["passing_yards"], errors="coerce")
+        normalized["passing_400_yard_game"] = (yards >= 400).astype(float).where(yards.notna())
+    return normalized
 
 
 @dataclass
@@ -152,7 +201,7 @@ class DataAssembler:
             else:
                 weekly_path = pbp_path
 
-        weekly = pd.read_csv(weekly_path)
+        weekly = normalize_weekly_stat_columns(pd.read_csv(weekly_path))
         if week is not None:
             weekly = weekly.loc[weekly["week"] == week]
 

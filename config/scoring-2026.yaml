@@ -1,0 +1,36 @@
+# Derived from this league's ESPN 2026 scoringSettings snapshot, 2026-09-16.
+# Offensive roster slots only; D/ST position overrides are not applied here.
+version: 1
+include_positions: [QB, RB, WR, TE, FLEX]
+weights:
+  passing_tds: 4
+  passing_int: -2
+  passing_two_point_conversion: 2
+  passing_long_td: 1
+  passing_400_yard_game: 1
+  rushing_yards: 0.1
+  rushing_tds: 6
+  rushing_two_point_conversion: 2
+  rushing_long_td: 1
+  receptions: 1
+  receiving_yards: 0.1
+  receiving_tds: 6
+  receiving_two_point_conversion: 2
+  receiving_long_td: 1
+  fumbles_lost: -2
+  kickoff_return_tds: 6
+  punt_return_tds: 6
+  fumble_recovery_tds: 6
+  blocked_kick_return_tds: 6
+  interception_return_tds: 6
+  fumble_return_tds: 6
+  two_point_returns: 2
+  one_point_safeties: 2
+unit_scoring:
+  passing_yards:
+    unit: 25
+    points: 1
+notes:
+  - ESPN appliedStatTotal is authoritative for completed games.
+  - TD bonuses count each qualifying event, including multiple events in one game.
+  - Revalidate this configuration against ESPN settings before another season or league.

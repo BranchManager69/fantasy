@@ -187,6 +187,18 @@ class RestOfSeasonSimulator:
         return self._summarize_team_points(teams, scores, "score_total")
 
     def _load_matchup_results(self, season: int) -> dict[tuple[int, str], dict[str, object]]:
+        # Explicit-week refreshes save mMatchup with a week suffix. The normalized
+        # schedule remains the season-wide source even when no unsuffixed raw view exists.
+        results: dict[tuple[int, str], dict[str, object]] = {}
+        schedule = self._load_schedule(season)
+        for _, matchup in schedule.iterrows():
+            results[(int(matchup["week"]), str(matchup["matchup_id"]))] = {
+                "home_team_id": int(matchup["home_team_id"]),
+                "away_team_id": int(matchup["away_team_id"]),
+                "home_points": float(matchup.get("home_points", 0.0) or 0.0),
+                "away_points": float(matchup.get("away_points", 0.0) or 0.0),
+                "winner": matchup.get("winner"),
+            }
         raw_path = (
             self.settings.data_root
             / "raw"
@@ -194,15 +206,11 @@ class RestOfSeasonSimulator:
             / str(season)
             / "view-mMatchup.json"
         )
-        if not raw_path.exists():
-            return {}
-
         try:
             data = json.loads(raw_path.read_text())
-        except json.JSONDecodeError:
-            return {}
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
 
-        results: dict[tuple[int, str], dict[str, object]] = {}
         for matchup in data.get("schedule", []):
             week = matchup.get("matchupPeriodId")
             matchup_id = matchup.get("id")
@@ -214,13 +222,14 @@ class RestOfSeasonSimulator:
                 continue
 
             key = (int(week), str(matchup_id))
-            results[key] = {
+            # Prefer the freshly normalized schedule over an older unsuffixed view.
+            results.setdefault(key, {
                 "home_team_id": int(home_team_id),
                 "away_team_id": int(away_team_id),
                 "home_points": float(home.get("totalPoints") or 0.0),
                 "away_points": float(away.get("totalPoints") or 0.0),
                 "winner": matchup.get("winner"),
-            }
+            })
 
         results_with_live = self._apply_live_score_overrides(season, results)
         return self._apply_matchup_overrides(results_with_live)
@@ -736,8 +745,12 @@ class RestOfSeasonSimulator:
             if effective_start > effective_end:
                 raise ValueError("start_week must be <= end_week")
 
-            weeks_to_process = [wk for wk in projection_weeks if effective_start <= wk <= effective_end]
-            if not weeks_to_process:
+            weeks_to_process = [
+                wk for wk in projection_weeks
+                if effective_start <= wk <= effective_end and wk not in completed_weeks
+            ]
+            history_weeks = [wk for wk in completed_weeks if wk <= effective_end]
+            if not weeks_to_process and not history_weeks:
                 raise ValueError(
                     f"No projection files fall within weeks {effective_start}-{effective_end}."
                 )
@@ -751,22 +764,16 @@ class RestOfSeasonSimulator:
                 for team_id in teams
             }
 
-            history_weeks = [wk for wk in completed_weeks if wk < effective_start]
             matchup_results = self._load_matchup_results(season)
 
             for week in history_weeks:
                 scores_df = self._load_week_scores(season, week)
-                if scores_df.empty:
-                    continue
-
-                team_actuals = self._summarize_team_actuals(teams, scores_df)
+                team_actuals = self._summarize_team_actuals(teams, scores_df) if not scores_df.empty else {}
                 week_schedule = schedule.loc[schedule["week"] == week]
 
-                # Build per-team LIVE projections for in-progress week using per-player blending
-                # with NFL game states (actual + projection × remaining_pct per player).
-                nfl_states = self._load_nfl_game_state(season, week)
-                live_proj_df = self._load_week_projection_with_live_blend(season, week, nfl_states)
-                team_live = self._summarize_team_projections(teams, live_proj_df) if not live_proj_df.empty else {}
+                # These weeks have settled. Final scores do not require a
+                # projection artifact or a complete historical player export.
+                team_live: dict[int, TeamProjection] = {}
 
                 for _, matchup in week_schedule.iterrows():
                     home_team_id = int(matchup["home_team_id"])
@@ -776,6 +783,11 @@ class RestOfSeasonSimulator:
                     actual = matchup_results.get((week, matchup_id))
                     home_proj = team_actuals.get(home_team_id)
                     away_proj = team_actuals.get(away_team_id)
+
+                    if home_proj is None and home_team_id in teams:
+                        home_proj = TeamProjection(teams[home_team_id], 0.0, [], [])
+                    if away_proj is None and away_team_id in teams:
+                        away_proj = TeamProjection(teams[away_team_id], 0.0, [], [])
 
                     if actual is None or home_proj is None or away_proj is None:
                         continue
@@ -787,6 +799,9 @@ class RestOfSeasonSimulator:
 
                     status_raw = str(actual.get("status") or "").lower()
                     winner_upper = str(winner or "").upper()
+
+                    if winner_upper in {"HOME", "AWAY", "TIE"}:
+                        status_raw = "final"
 
                     if status_raw not in {"final", "in_progress"}:
                         if winner_upper in {"HOME", "AWAY", "TIE"}:
@@ -1069,8 +1084,8 @@ class RestOfSeasonSimulator:
             dataset: dict[str, object] = {
                 "season": season,
                 "generated_at": datetime.now(timezone.utc).isoformat(),
-                "start_week": min(weeks_to_process),
-                "end_week": max(weeks_to_process),
+                "start_week": min(weeks_to_process or history_weeks),
+                "end_week": max(weeks_to_process or history_weeks),
                 "projection_sigma": sigma,
                 "teams": [self._team_to_dict(team) for team in teams.values()],
                 "team_schedule": {str(team_id): schedule for team_id, schedule in team_schedule.items()},
@@ -1226,32 +1241,46 @@ class RestOfSeasonSimulator:
                 continue
         return sorted(set(weeks))
 
+    def regular_season_end_week(self, season: int) -> Optional[int]:
+        settings_path = self.settings.data_root / "out" / "espn" / str(season) / "league_settings.csv"
+        if not settings_path.exists():
+            return None
+        settings_df = pd.read_csv(settings_path)
+        if settings_df.empty:
+            return None
+        value = settings_df.iloc[0].get("regular_season_matchups")
+        if pd.isna(value):
+            return None
+        week = int(value)
+        return week if week > 0 else None
+
     def _detect_completed_weeks(self, season: int) -> list[int]:
-        espn_dir = self.settings.data_root / "out" / "espn" / str(season)
-        if not espn_dir.exists():
-            return []
+        # A score file exists before kickoff and while games are live. Only
+        # settled matchup results can move a week into the actual standings.
+        schedule = self._load_schedule(season)
+        results = self._load_matchup_results(season)
         weeks = []
-        for entry in espn_dir.iterdir():
-            if not entry.is_file():
-                continue
-            name = entry.name
-            if not name.startswith(f"weekly_scores_{season}_week_") or not name.endswith(".csv"):
-                continue
-            try:
-                week = int(name.split("weekly_scores_" + str(season) + "_week_")[1].split(".csv")[0])
-                weeks.append(week)
-            except (IndexError, ValueError):
-                continue
-        return sorted(set(weeks))
+        if schedule.empty:
+            return weeks
+        for week, matchups in schedule.groupby("week"):
+            def is_final(matchup_id: object) -> bool:
+                result = results.get((int(week), str(matchup_id)), {})
+                return (
+                    str(result.get("winner") or "").upper() in {"HOME", "AWAY", "TIE"}
+                    or str(result.get("status") or "").lower() == "final"
+                )
+
+            if all(is_final(matchup_id) for matchup_id in matchups["matchup_id"]):
+                weeks.append(int(week))
+        return sorted(weeks)
 
     def _default_start_week(self, projection_weeks: Iterable[int], completed_weeks: Iterable[int]) -> int:
         projection_weeks = sorted(projection_weeks)
         completed_weeks = sorted(completed_weeks)
         if not completed_weeks:
             return projection_weeks[0]
-        last_completed = completed_weeks[-1]
         for week in projection_weeks:
-            if week > last_completed:
+            if week not in completed_weeks:
                 return week
         return projection_weeks[0]
 

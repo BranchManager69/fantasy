@@ -68,6 +68,28 @@ def _mask_value(show_secrets: bool, raw: Optional[str], masked: Optional[str]) -
     return masked or ""
 
 
+def _resolve_scoring_config(season: int, explicit: Path | None) -> Path:
+    seasonal = Path("config") / f"scoring-{season}.yaml"
+    path = explicit if explicit is not None else (seasonal if seasonal.is_file() else Path("config/scoring.yaml"))
+    if not path.is_file():
+        raise click.BadParameter(f"Scoring configuration not found: {path}", param_hint="--config")
+    return path
+
+
+def _resolve_league_size(settings: AppSettings, season: int, explicit: int | None) -> int:
+    if explicit is not None:
+        return explicit
+    path = settings.data_root / "out" / "espn" / str(season) / "league_settings.csv"
+    try:
+        frame = pd.read_csv(path, nrows=1)
+        size = float(frame.iloc[0]["size"])
+        if math.isfinite(size) and size.is_integer() and size >= 2:
+            return int(size)
+    except (OSError, ValueError, KeyError, IndexError):
+        pass
+    raise click.ClickException("League size is missing from ESPN settings; supply --league-size explicitly.")
+
+
 def _env_rows(settings: AppSettings, show_secrets: bool) -> list[tuple[str, str]]:
     return [
         ("ESPN_EMAIL", _mask_value(show_secrets, settings.espn_email, settings.masked_email)),
@@ -335,7 +357,7 @@ def nfl_fetch_game_state(season: int, week: int, env_file: Path) -> None:
     settings = get_settings(env_file)
     click.echo(f"Fetching NFL game state for week {week}...")
     try:
-        scoreboard = fetch_nfl_scoreboard(week=week)
+        scoreboard = fetch_nfl_scoreboard(week=week, season=season)
         game_states = parse_nfl_game_states(scoreboard)
         click.echo(f"Found {len(game_states)} NFL team game states")
         output_path = (
@@ -395,9 +417,9 @@ def score() -> None:
     "--config",
     "config_path",
     type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True),
-    default=Path("config/scoring.yaml"),
+    default=None,
     show_default=True,
-    help="Path to the scoring configuration file.",
+    help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.",
 )
 @click.option(
     "--env-file",
@@ -406,7 +428,7 @@ def score() -> None:
     show_default=True,
     help="Path to the .env file to load.",
 )
-def score_week(season: int | None, week: int, config_path: Path, env_file: Path) -> None:
+def score_week(season: int | None, week: int, config_path: Path | None, env_file: Path) -> None:
     """Compute fantasy points for a given week."""
 
     settings = get_settings(env_file)
@@ -414,7 +436,7 @@ def score_week(season: int | None, week: int, config_path: Path, env_file: Path)
     if target_season is None:
         raise click.BadParameter("Season must be provided via --season or ESPn season in .env")
 
-    config = ScoringConfig.load(config_path)
+    config = ScoringConfig.load(_resolve_scoring_config(target_season, config_path))
     engine = ScoreEngine(settings, config)
     scored, output_path = engine.score_week(target_season, week)
 
@@ -436,9 +458,9 @@ def score_week(season: int | None, week: int, config_path: Path, env_file: Path)
     "--config",
     "config_path",
     type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True),
-    default=Path("config/scoring.yaml"),
+    default=None,
     show_default=True,
-    help="Path to the scoring configuration file.",
+    help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.",
 )
 @click.option("--force-nflverse", is_flag=True, help="Force re-download of nflverse datasets.")
 @click.option("--skip-score", is_flag=True, help="Skip scoring stage (useful for quick builds).")
@@ -452,7 +474,7 @@ def score_week(season: int | None, week: int, config_path: Path, env_file: Path)
 def refresh_week(
     season: int | None,
     week: int | None,
-    config_path: Path,
+    config_path: Path | None,
     force_nflverse: bool,
     skip_score: bool,
     env_file: Path,
@@ -464,6 +486,7 @@ def refresh_week(
     if target_season is None:
         raise click.BadParameter("Season must be provided via --season or ESPn season in .env")
 
+    config_path = _resolve_scoring_config(target_season, config_path)
     settings.espn_season = target_season
 
     selected_views = ensure_views(None)
@@ -601,7 +624,7 @@ def refresh_week(
             / str(target_season)
             / f"game_state_week_{target_week}.json"
         )
-        states = parse_nfl_game_states(fetch_nfl_scoreboard(week=target_week))
+        states = parse_nfl_game_states(fetch_nfl_scoreboard(week=target_week, season=target_season))
         save_nfl_game_state(states, nfl_output_path)
         click.echo(f"Saved {len(states)} NFL team game states → {nfl_output_path}")
     except Exception as exc:  # pragma: no cover - network/runtime dependent
@@ -635,7 +658,7 @@ def refresh_week(
         click.echo("Skipping scoring stage (per --skip-score)")
         return
 
-    config = ScoringConfig.load(config_path)
+    config = ScoringConfig.load(_resolve_scoring_config(target_season, config_path))
     engine = ScoreEngine(settings, config)
     scored, scores_path = engine.score_week(target_season, target_week)
 
@@ -1170,10 +1193,10 @@ def sim_rest_of_season(
 @click.option("--season", type=int, default=None, help="Season to refresh (defaults to ESPN season in .env).")
 @click.option("--week", type=int, help="Single week to refresh (shorthand for --start-week/--end-week).")
 @click.option("--start-week", type=int, help="First week to process when building projections.")
-@click.option("--end-week", type=int, help="Last week to process; defaults to start week.")
+@click.option("--end-week", type=int, help="Last week to process; defaults to the league's regular-season end.")
 @click.option("--lookback", type=int, default=3, show_default=True, help="Lookback window for usage baseline provider.")
 @click.option("--provider", "providers", multiple=True, help="Projection providers in priority order (e.g. espn, usage).")
-@click.option("--league-size", type=int, default=12, show_default=True, help="League size used for FantasyCalc pulls.")
+@click.option("--league-size", type=click.IntRange(min=2), default=None, help="League size for FantasyCalc; defaults to the refreshed ESPN league settings.")
 @click.option("--ppr", type=float, default=1.0, show_default=True, help="PPR setting for FantasyCalc pulls.")
 @click.option("--num-qbs", type=int, default=1, show_default=True, help="Number of starting QBs (use 2 for superflex).")
 @click.option("--dynasty/--redraft", "is_dynasty", default=False, show_default=True, help="Pull dynasty instead of redraft values from FantasyCalc.")
@@ -1182,9 +1205,9 @@ def sim_rest_of_season(
     "--config",
     "config_path",
     type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True),
-    default=Path("config/scoring.yaml"),
+    default=None,
     show_default=True,
-    help="Scoring configuration file to use.",
+    help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.",
 )
 @click.option("--force-nflverse", is_flag=True, help="Force re-download of nflverse datasets during refresh-week.")
 @click.option(
@@ -1201,12 +1224,12 @@ def refresh_all(
     end_week: int | None,
     lookback: int,
     providers: tuple[str, ...],
-    league_size: int,
+    league_size: int | None,
     ppr: float,
     num_qbs: int,
     is_dynasty: bool,
     include_adp: bool,
-    config_path: Path,
+    config_path: Path | None,
     force_nflverse: bool,
     env_file: Path,
 ) -> None:
@@ -1222,6 +1245,8 @@ def refresh_all(
     target_season = season or settings.espn_season
     if target_season is None:
         raise click.BadParameter("Season must be provided via --season or ESPn season in .env")
+
+    config_path = _resolve_scoring_config(target_season, config_path)
 
     effective_start = week if week is not None else start_week
     effective_end = week if week is not None else end_week
@@ -1243,6 +1268,8 @@ def refresh_all(
         env_file=env_file,
     )
 
+    league_size = _resolve_league_size(settings, target_season, league_size)
+
     if effective_start is None:
         effective_start = refreshed_week
         effective_end = refreshed_week
@@ -1258,12 +1285,14 @@ def refresh_all(
 
     if auto_end:
         simulator = RestOfSeasonSimulator(settings)
-        projection_weeks = simulator._detect_projection_weeks(target_season)
-        if projection_weeks:
-            max_projection_week = max(projection_weeks)
-            effective_end = max(max_projection_week, effective_start)
-        else:
-            effective_end = effective_start
+        regular_season_end = simulator.regular_season_end_week(target_season)
+        if regular_season_end is None:
+            raise click.ClickException(
+                "Regular-season length is missing from league settings; supply --end-week explicitly."
+            )
+        if effective_start > regular_season_end:
+            raise click.ClickException("The current week is beyond the league's regular season.")
+        effective_end = regular_season_end
 
     # Step 2: build projection baselines for the requested range
     provider_list = [name.strip().lower() for name in providers if name.strip()]
@@ -1916,9 +1945,9 @@ def audit_transactions(
     "--config",
     "config_path",
     type=click.Path(path_type=Path, dir_okay=False, readable=True),
-    default=Path("config/scoring.yaml"),
+    default=None,
     show_default=True,
-    help="Scoring config used to convert stat projections into fantasy points.",
+    help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.",
 )
 @click.option(
     "--env-file",
@@ -1933,7 +1962,7 @@ def projections_apply(
     baseline: Path | None,
     overrides: Path | None,
     assumptions: Path | None,
-    config_path: Path,
+    config_path: Path | None,
     env_file: Path,
 ) -> None:
     """Combine baseline projections, overrides, and assumptions into a scored dataset."""
@@ -1954,7 +1983,7 @@ def projections_apply(
     if assumptions_path is not None and not assumptions_path.exists():
         assumptions_path = None
 
-    scoring_config = ScoringConfig.load(config_path)
+    scoring_config = ScoringConfig.load(_resolve_scoring_config(target_season, config_path))
     manager = ProjectionManager(settings, scoring_config)
 
     output_dir = settings.data_root / "out" / "projections" / str(target_season)
@@ -2334,9 +2363,9 @@ def scenario_set_score(
     "--config",
     "config_path",
     type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True),
-    default=Path("config/scoring.yaml"),
+    default=None,
     show_default=True,
-    help="Scoring configuration file to use.",
+    help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.",
 )
 @click.option(
     "--env-file",
@@ -2357,7 +2386,7 @@ def scenario_set_player_score(
     points: float | None,
     stat_pairs: tuple[str, ...],
     counts_for_score: bool | None,
-    config_path: Path,
+    config_path: Path | None,
     env_file: Path,
 ) -> None:
     """Update or insert a player's score within a completed week, optionally via stat overrides."""
@@ -2398,7 +2427,7 @@ def scenario_set_player_score(
     for key, value in stats_override.items():
         merged_row[key] = value
 
-    config = ScoringConfig.load(config_path)
+    config = ScoringConfig.load(_resolve_scoring_config(target_season, config_path))
     engine = ScoreEngine(settings, config)
     scored_row = engine.score_dataframe(pd.DataFrame([merged_row])).iloc[0].to_dict()
 
@@ -2445,7 +2474,7 @@ def scenario_set_player_score(
 @click.option("--points", type=float, default=None, help="Optional explicit projected total after applying stats.")
 @click.option("--stat", "stat_pairs", multiple=True, help="Projected stat override in key=value form (repeat for multiple stats).")
 @click.option("--counts-for-score/--counts-for-bench", default=None, show_default=True, help="Whether the entry counts toward the team total.")
-@click.option("--config", "config_path", type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True), default=Path("config/scoring.yaml"), show_default=True, help="Scoring configuration file to use.")
+@click.option("--config", "config_path", type=click.Path(path_type=Path, dir_okay=False, exists=True, readable=True), default=None, show_default=True, help="Scoring configuration; defaults to config/scoring-<season>.yaml when present, otherwise config/scoring.yaml.")
 @click.option("--env-file", type=click.Path(path_type=Path, dir_okay=False, exists=False, readable=True), default=".env", show_default=True, help="Path to the .env file to load.")
 def scenario_set_player_projection(
     season: int | None,
@@ -2459,7 +2488,7 @@ def scenario_set_player_projection(
     points: float | None,
     stat_pairs: tuple[str, ...],
     counts_for_score: bool | None,
-    config_path: Path,
+    config_path: Path | None,
     env_file: Path,
 ) -> None:
     """Update or insert a player's projection for a future week, optionally via stat overrides."""
@@ -2499,7 +2528,7 @@ def scenario_set_player_projection(
     for key, value in stats_override.items():
         merged_row[key] = value
 
-    config = ScoringConfig.load(config_path)
+    config = ScoringConfig.load(_resolve_scoring_config(target_season, config_path))
     engine = ScoreEngine(settings, config)
     scored_row = engine.score_dataframe(pd.DataFrame([merged_row])).iloc[0].to_dict()
 
