@@ -84,6 +84,10 @@ The private `/studio` workspace stores GM profiles, reference photos and sourced
 
 See [the studio operations guide](docs/league-studio.md) for owner seeding, the confirmed Dillon account mapping, private access links, import formats, model settings and separate text/image limits. The store requires Linux `/usr/bin/flock`. Studio data stays under `DATA_ROOT/private/studio/` and is excluded from the public weekly feed.
 
+The home page opens on official matchup scores. Select a team to revisit a verified turning point or compare its best legal lineup using final points. Turning points appear only where the saved evidence includes checked before/after scores. Other matchups retain their official result and supported lineup comparison. `FANTASY_DEFAULT_TEAM_ID` chooses the initial team; the `team` URL parameter overrides it.
+
+After signing in to the studio, the same viewer can display saved episodes and assigned owner portraits. Its authenticated episode endpoint exposes only display names, scenes and image URLs. Backgrounds, chat sources, prompt text and memory records remain in the editor. Viewing an episode makes no AI request.
+
 ## Data and scenarios
 
 - `data/raw/`: cached ESPN and nflverse responses.
@@ -100,6 +104,7 @@ The `fantasy scenario` commands create overlays and change historical scores or 
 ```bash
 poetry run pytest
 npm run test:studio --prefix apps/web
+npm run test:replay --prefix apps/web
 npm run build --prefix apps/web
 npm audit --prefix apps/web
 ```

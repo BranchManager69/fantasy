@@ -27,6 +27,13 @@ body:has(.week-page)::before { display: none; }
 .week-edition { color: var(--week-muted); font-size: 14px; }
 .week-nav { display: flex; gap: 24px; margin-left: auto; font-size: 14px; }
 .week-nav a { display: inline-flex; min-height: 44px; align-items: center; text-decoration: underline; }
+.week-watch { scroll-margin-top: 20px; }
+.week-watch-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 8px 0 24px; }
+.week-page .week-watch-heading h1 { font: 600 clamp(28px, 3vw, 40px)/1.1 var(--font-geist-sans), sans-serif; letter-spacing: -.03em; max-width: none; }
+.week-watch-heading .week-field { width: min(300px, 55%); }
+.week-lineup-details { padding: 24px 0; border-top: 1px solid var(--week-line); }
+.week-lineup-details > summary { font-size: 22px; font-weight: 600; cursor: pointer; min-height: 48px; align-content: center; }
+.week-lineup-details[open] > summary { margin-bottom: 28px; }
 .week-hero { display: grid; grid-template-columns: 1.45fr 1fr; gap: 64px; padding: 48px 0 56px; align-items: center; }
 .week-page h1 { font-family: Georgia, serif; font-size: clamp(40px, 5.5vw, 72px); line-height: 1.04; letter-spacing: -0.035em; max-width: 13ch; font-weight: 400; }
 .week-deck { font-size: 18px; line-height: 1.7; max-width: 58ch; margin-top: 24px; }

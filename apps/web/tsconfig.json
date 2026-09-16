@@ -38,11 +38,12 @@
     "**/*.tsx",
     ".next-analyst/types/**/*.ts",
     ".next-repair/types/**/*.ts",
+    ".next-studio-release/types/**/*.ts",
     ".next-studio-v2/types/**/*.ts",
     ".next-studio/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-studio-release/types/**/*.ts"
+    ".next-replay-v1/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

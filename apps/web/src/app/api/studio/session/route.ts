@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { createStudioSession, sameOrigin, studioHeaders, STUDIO_COOKIE } from "@/server/league-studio-auth";
+import { createStudioSession, sameOrigin, studioAuthorized, studioHeaders, STUDIO_COOKIE } from "@/server/league-studio-auth";
 import { readRequestJson } from "@/server/league-studio-core";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export async function GET(request: Request) {
+  const authorized = await studioAuthorized(request).catch(() => false);
+  return NextResponse.json({ authorized }, { headers: studioHeaders });
+}
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return NextResponse.json({ error: "Open the studio to sign in" }, { status: 403, headers: studioHeaders });
   try {

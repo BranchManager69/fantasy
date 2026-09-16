@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { LeagueWeek, WeekTeam } from "@/lib/league-week";
 import { LeagueAnalyst } from "@/components/league-analyst";
 import { PlayerPortrait } from "@/components/player-portrait";
+import { WeekReplay } from "@/components/week-replay";
+import type { WeekReplays } from "@/lib/week-replay";
 
 const points = (value: number | null) => value === null ? "N/A" : value.toFixed(1);
 const signed = (value: number) => `${value > 0 ? "+" : ""}${points(value)}`;
@@ -29,15 +31,13 @@ function PlayerList({ team, bench = false }: { team: WeekTeam; bench?: boolean }
   </ul>;
 }
 
-export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; initialTeamId?: number }) {
+export function WeekExplorer({ report, replays, initialTeamId }: { report: LeagueWeek; replays: WeekReplays; initialTeamId?: number }) {
   const [teamId, setTeamId] = useState(initialTeamId ?? report.teams[0]?.id);
   const [outId, setOutId] = useState("");
   const [inId, setInId] = useState("");
   const team = report.teams.find((entry) => entry.id === teamId) ?? report.teams[0];
   if (!team) return <p>The weekly report has no teams yet.</p>;
   const opponent = report.teams.find((entry) => entry.id === team.opponentId);
-  const result = teamResult(team);
-  const opponentResult = opponent ? teamResult(opponent) : null;
   const starters = team.players.filter((player) => player.starter);
   const outgoing = starters.find((player) => player.points !== null && String(player.id) === outId);
   const eligible = outgoing ? team.players.filter((player) => !player.starter && player.slotId === 20 && player.points !== null && player.eligibleSlots.includes(outgoing.slotId)) : [];
@@ -49,14 +49,28 @@ export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; in
   const wins = others.filter((entry) => revisedScore > entry.score + 0.001).length;
   const ties = others.filter((entry) => Math.abs(revisedScore - entry.score) < 0.001).length;
 
-  function selectTeam(id: number) {
+  function selectTeam(id: number, reveal = false) {
     setTeamId(id); setOutId(""); setInId("");
     const url = new URL(window.location.href);
     url.searchParams.set("team", String(id));
     window.history.replaceState(null, "", url);
+    if (reveal) requestAnimationFrame(() => document.getElementById("week-watch")?.scrollIntoView({
+      block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    }));
   }
 
   return <>
+    <section id="week-watch" className="week-watch" aria-labelledby="week-watch-title">
+      <div className="week-watch-heading">
+        <h1 id="week-watch-title">Week {report.week}</h1>
+        <label className="week-field"><span className="sr-only">Choose a team</span><select value={team.id} onChange={(event) => selectTeam(Number(event.target.value))}>
+          {report.teams.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+        </select></label>
+      </div>
+      {replays[String(team.id)] && <WeekReplay key={`${report.season}-${report.week}-${team.id}`} replay={replays[String(team.id)]} season={report.season} week={report.week} />}
+    </section>
+    <LeagueAnalyst key={`${report.season}-${report.week}-${team.id}`} season={report.season} week={report.week} teamId={team.id} teamName={team.name} />
+
     <section className="week-results" aria-labelledby="results-title">
       <div className="week-section-heading"><h2 id="results-title">Around the league</h2><p>{report.complete ? "Final scores" : "In progress"}</p></div>
       <div className="week-results-grid">
@@ -68,7 +82,7 @@ export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; in
             {[home, away].map((entry) => {
               const leader = leadingPlayer(entry);
               const status = teamResult(entry);
-              return <button type="button" className={`week-matchup-row week-result-${status.result}`} aria-pressed={team.id === entry.id} key={entry.id} onClick={() => selectTeam(entry.id)}>
+              return <button type="button" className={`week-matchup-row week-result-${status.result}`} aria-pressed={team.id === entry.id} key={entry.id} onClick={() => selectTeam(entry.id, true)}>
                 {leader ? <PlayerPortrait id={leader.id} name={leader.name} description={`${leader.name}, ${entry.name}'s leading scorer with ${points(leader.points)} points`} /> : <span />}
                 <span className="week-matchup-name">{entry.name}</span>
                 <span className="week-matchup-score"><strong>{points(entry.score)}</strong><small>{status.label}</small></span>
@@ -79,21 +93,10 @@ export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; in
       </div>
     </section>
 
-    <section className="week-investigate" aria-labelledby="team-title">
-      <div className="week-section-heading week-team-heading">
-        <h2 id="team-title">Your matchup</h2>
-        <label className="week-field"><span className="sr-only">Team</span><select value={team.id} onChange={(event) => selectTeam(Number(event.target.value))}>
-          {report.teams.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
-        </select></label>
-      </div>
-      <LeagueAnalyst key={`${report.season}-${report.week}-${team.id}`} season={report.season} week={report.week} teamId={team.id} teamName={team.name} />
+    <details className="week-lineup-details">
+      <summary>Lineups and bench decisions</summary>
       <div className="week-workspace">
         <div>
-          <div className="week-official-result">
-            <span className={`week-result-${result.result}`}>{team.name}<strong>{points(team.score)}</strong><small>{result.label}</small></span>
-            <span className="week-result-word">{team.final ? "Final" : "In progress"}</span>
-            <span className={opponentResult ? `week-result-${opponentResult.result}` : ""}>{team.opponentName}<strong>{points(team.opponentScore)}</strong>{opponentResult && <small>{opponentResult.label}</small>}</span>
-          </div>
           <div className="week-lineups">
             <section aria-label={`${team.name} lineup`}><h3>{team.name}</h3><PlayerList team={team} />
               <details className="week-bench"><summary>Bench and reserve ({team.players.filter((player) => !player.starter).length})</summary><PlayerList team={team} bench /></details>
@@ -138,6 +141,6 @@ export function WeekExplorer({ report, initialTeamId }: { report: LeagueWeek; in
           <p className="week-caption">Your score against each opponent. League standings stay unchanged.</p>
         </aside> : <aside className="week-allplay"><h3>The week is still in progress</h3><p>Once every matchup is final, compare every opponent and replay a bench decision here.</p></aside>}
       </div>
-    </section>
+    </details>
   </>;
 }

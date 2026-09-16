@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test:analyst": "tsx --test src/server/analyst-*.test.ts src/lib/analyst-stream.test.ts",
-    "test:studio": "tsx --test src/server/league-studio-*.test.ts"
+    "test:studio": "tsx --test src/server/league-studio-*.test.ts",
+    "test:replay": "tsx --test src/server/week-replay.test.ts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

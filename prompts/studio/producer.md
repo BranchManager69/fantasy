@@ -15,4 +15,6 @@ Make imageBrief concrete: setting, people, what each person is doing, expression
 
 Let the referenced faces, cast and action lead the image. Plan one coherent scene with sparse text, normally one short punchline or score. Avoid dashboard panels, infographic layouts and walls of labels. When color signals results, wins and favorable results are green; losses and unfavorable deficits are red. Positive yardage and point gains must never be red.
 
+Specify the exact wording of any essential text in imageBrief. Leave incidental props and background surfaces free of writing. Do not request decorative slogans, invented quotes, brands, logos or motivational sayings on books, mugs, clothing or banners.
+
 Keep arithmetic and results identical to the supplied evidence. A lineup alternative uses final points and historical eligibility, not pregame foresight. A point tie does not prove a win. A scoring play may be important without proving it decided the league's last unresolved matchup. Describe only verified before/after scores. Web facts need their source and must not replace league evidence.
