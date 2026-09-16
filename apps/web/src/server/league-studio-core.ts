@@ -30,7 +30,7 @@ export async function listPrivateJson<T>(folder: string, limit = 100): Promise<T
   return Promise.all(items.sort((a, b) => b.time - a.time).slice(0, limit).map((item) => readPrivateJson<T>(path.join(folder, item.name))));
 }
 export type StudioAsset = {
-  id: string; label: string; kind: "portrait" | "reference" | "generated";
+  id: string; label: string; kind: "portrait" | "reference" | "generated" | "source-photo" | "cutout";
   memberId?: string; playerId?: number; mime: string; bytes: number; createdAt: string;
   sourceUrl?: string; referenceIds?: string[]; prompt?: string; model?: string;
 };
@@ -60,23 +60,26 @@ export function imageMime(bytes: Uint8Array): string {
   if (b.subarray(0, 4).toString() === "RIFF" && b.subarray(8, 12).toString() === "WEBP") return "image/webp";
   throw new Error("Use a PNG, JPEG, or WebP image");
 }
-export async function saveStudioAsset(bytes: Buffer, fields: Omit<StudioAsset, "id" | "mime" | "bytes" | "createdAt">) {
+export function studioAssetId(bytes: Buffer, fields: Pick<StudioAsset, "kind" | "memberId" | "playerId" | "referenceIds">) {
+  return `asset-${createHash("sha256").update(bytes).update(JSON.stringify({ memberId: fields.memberId, playerId: fields.playerId, kind: fields.kind, ...(fields.kind === "cutout" ? { referenceIds: fields.referenceIds } : {}) })).digest("hex").slice(0, 32)}`;
+}
+export async function saveStudioAsset(bytes: Buffer, fields: Omit<StudioAsset, "id" | "mime" | "bytes" | "createdAt">, directory = studioDirectory()) {
   if (!bytes.length || bytes.length > 10 * 1024 * 1024) throw new Error("Images must be between 1 byte and 10 MB");
   if (fields.memberId) studioId(fields.memberId);
   if (fields.playerId !== undefined && (!Number.isInteger(fields.playerId) || fields.playerId < 1)) throw new Error("Invalid player identifier");
   const mime = imageMime(bytes);
-  const id = `asset-${createHash("sha256").update(bytes).update(JSON.stringify({ memberId: fields.memberId, playerId: fields.playerId, kind: fields.kind })).digest("hex").slice(0, 32)}`;
+  const id = studioAssetId(bytes, fields);
   const asset: StudioAsset = { ...fields, label: String(fields.label).slice(0, 200), id, mime, bytes: bytes.length, createdAt: new Date().toISOString() };
-  const folder = path.join(studioDirectory(), "images");
+  const folder = path.join(directory, "images");
   await privateDirectory(folder);
   await fs.writeFile(path.join(folder, id), bytes, { mode: 0o600 });
-  await writePrivateJson(collectionFile("assets", id), asset);
+  await writePrivateJson(path.join(directory, "assets", `${id}.json`), asset);
   return asset;
 }
-export async function readStudioAsset(id: string) {
-  const asset = await readPrivateJson<StudioAsset>(collectionFile("assets", id));
+export async function readStudioAsset(id: string, directory = studioDirectory()) {
+  const asset = await readPrivateJson<StudioAsset>(path.join(directory, "assets", `${studioId(id)}.json`));
   if (asset.id !== id) throw new Error("Image identity mismatch");
-  const filename = path.join(studioDirectory(), "images", studioId(id));
+  const filename = path.join(directory, "images", studioId(id));
   const stat = await fs.lstat(filename);
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 10 * 1024 * 1024) throw new Error("Image is unavailable");
   const bytes = await fs.readFile(filename);

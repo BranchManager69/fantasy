@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { LeaguePhotoLibrary } from "./league-photo-library";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 type Profile = { id: string; teamId: number; displayName: string; aliases: string[]; background: string; roastNotes: string; avoidTopics: string[]; assets?: { id: string; kind: string; label?: string }[] };
 type Import = { id: string; label: string; kind: string; text?: string; createdAt?: string };
 type SourceExcerpt = { source: { id: string; label: string }; message: { id: string; author: string | null; timestamp: string | null; text: string } };
 type Memory = { id: string; importId?: string; kind: string; text: string; memberIds: string[]; sourceIds: string[]; confidence: "explicit" | "inferred"; enabled: boolean };
-type Asset = { id: string; label: string; kind: "portrait" | "reference" | "generated"; memberId?: string; playerId?: number; mime: string };
+type Asset = { id: string; label: string; kind: "portrait" | "reference" | "generated" | "source-photo" | "cutout"; memberId?: string; playerId?: number; mime: string };
 type Job = { id: string; kind: string; status: string; stage: string; progress: { done: number; total: number }; error?: string; resultId?: string };
 type Scene = { id: string; title: string; commentary: string; evidenceIds: string[]; memoryIds?: string[]; memberIds: string[]; playerIds: number[]; imageBrief?: string; assetId?: string };
 type Board = { id: string; title: string; season: number; week: number; teamId: number; scenes: Scene[]; evidence?: Record<string, unknown>; memories?: Pick<Memory, "id" | "text" | "sourceIds" | "confidence">[] };
@@ -81,7 +82,7 @@ export function LeagueStudio() {
   const [auth, setAuth] = useState<"checking" | "locked" | "ready">("checking");
   const [token, setToken] = useState("");
   const [showToken, setShowToken] = useState(false);
-  const [tab, setTab] = useState<"people" | "history" | "scenes">("people");
+  const [tab, setTab] = useState<"people" | "photos" | "history" | "scenes">("people");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -119,6 +120,8 @@ export function LeagueStudio() {
     window.addEventListener("hashchange", acceptAccessLink);
     if (!initialized.current) {
       initialized.current = true;
+      const requestedTab = new URLSearchParams(window.location.search).get("tab");
+      if (requestedTab === "people" || requestedTab === "photos" || requestedTab === "history" || requestedTab === "scenes") setTab(requestedTab);
       if (!acceptAccessLink()) void reload().catch((reason) => { setError(reason instanceof Error ? reason.message : "Could not load the studio."); setAuth("locked"); });
     }
     return () => window.removeEventListener("hashchange", acceptAccessLink);
@@ -172,9 +175,10 @@ export function LeagueStudio() {
         <button className="studio-primary" disabled={!!busy || !token.trim()}>{busy === "login" ? "Opening…" : "Open studio"}</button>
       </form>
     </section> : data && <>
-      <nav className="studio-tabs" aria-label="Studio sections">{([['people', 'People'], ['history', 'League history'], ['scenes', 'Scenes']] as const).map(([value, label]) => <button key={value} type="button" aria-current={tab === value ? "page" : undefined} onClick={() => setTab(value)}>{label}</button>)}</nav>
+      <nav className="studio-tabs" aria-label="Studio sections">{([['people', 'People'], ['photos', 'Photos'], ['history', 'League history'], ['scenes', 'Scenes']] as const).map(([value, label]) => <button key={value} type="button" aria-current={tab === value ? "page" : undefined} onClick={() => { setTab(value); const url = new URL(window.location.href); url.searchParams.set("tab", value); window.history.replaceState(null, "", url); }}>{label}</button>)}</nav>
       {notice && <p className="studio-notice" role="status">{notice}</p>}
       <div hidden={tab !== "people"}><People data={data} act={act} busy={busy} aiBusy={aiBusy} upload={upload} /></div>
+      {tab === "photos" && <LeaguePhotoLibrary profiles={data.state.profiles} teams={data.teams} players={data.players ?? []} />}
       <div hidden={tab !== "history"}><History data={data} act={act} busy={busy} aiBusy={aiBusy} /></div>
       <div hidden={tab !== "scenes"}><Scenes data={data} act={act} busy={busy} aiBusy={aiBusy} /></div>
       {!!data.jobs.length && <section className="studio-activity" aria-labelledby="studio-activity-title"><h2 id="studio-activity-title">Activity</h2><ul>{data.jobs.slice(0, 8).map((job) => <li key={job.id}>
@@ -238,7 +242,7 @@ function People({ data, act, busy, upload }: Shared & { upload: (form: FormData)
         {preview && <Image className="studio-upload-preview" src={preview} alt="Selected photo preview" width={240} height={180} unoptimized />}
         <button className="studio-primary" disabled={!!busy || !file || (target === "member" ? !memberId : !playerId)}>{busy === "upload" ? "Uploading…" : "Add photo"}</button>
       </form>
-      <div className="studio-photo-grid">{data.assets.filter((asset) => asset.kind !== "generated").map((asset) => { const person = asset.memberId ? data.state.profiles.find((profile) => profile.id === asset.memberId)?.displayName : data.players?.find((player) => player.id === asset.playerId)?.name; return <figure key={asset.id}><Image src={assetUrl(asset.id)} alt={asset.label} width={160} height={128} unoptimized /><figcaption>{asset.label}{person && person !== asset.label && <small>{person}</small>}</figcaption></figure>; })}</div>
+      <div className="studio-photo-grid">{data.assets.filter((asset) => asset.kind === "portrait" || asset.kind === "reference").map((asset) => { const person = asset.memberId ? data.state.profiles.find((profile) => profile.id === asset.memberId)?.displayName : data.players?.find((player) => player.id === asset.playerId)?.name; return <figure key={asset.id}><Image src={assetUrl(asset.id)} alt={asset.label} width={160} height={128} unoptimized /><figcaption>{asset.label}{person && person !== asset.label && <small>{person}</small>}</figcaption></figure>; })}</div>
     </section>
   </div></div>;
 }
@@ -289,7 +293,7 @@ function SceneEditor({ scene, index, board, data, act, busy, aiBusy }: Shared & 
   const boardId = board.id;
   const [commentary, setCommentary] = useState(scene.commentary); const [brief, setBrief] = useState(scene.imageBrief ?? ""); const [editing, setEditing] = useState(false);
   const members = (scene.memberIds ?? []).map((id) => data.state.profiles.find((profile) => profile.id === id));
-  const missing = (scene.memberIds ?? []).filter((id) => !data.assets.some((asset) => asset.memberId === id && asset.kind !== "generated") && !data.state.profiles.find((profile) => profile.id === id)?.assets?.length);
+  const missing = (scene.memberIds ?? []).filter((id) => !data.assets.some((asset) => asset.memberId === id && (asset.kind === "portrait" || asset.kind === "reference")) && !data.state.profiles.find((profile) => profile.id === id)?.assets?.some((asset) => asset.kind === "portrait" || asset.kind === "reference"));
   const cast = [...members.map((profile, i) => profile?.displayName ?? scene.memberIds[i]), ...(scene.playerIds ?? []).map((id) => data.players?.find((player) => player.id === id)?.name ?? `Player ${id}`)];
   return <article className="studio-scene"><h4><span>{index + 1}.</span> {scene.title}</h4>{scene.assetId && <Image className="studio-scene-image" src={assetUrl(scene.assetId)} alt={scene.title} width={960} height={640} unoptimized />}
     <p className="studio-commentary">{scene.commentary}</p>{!!cast.length && <p className="studio-hint">Featuring {cast.join(", ")}</p>}
