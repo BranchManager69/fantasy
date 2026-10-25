@@ -1,6 +1,13 @@
 # Fantasy League Engine
 
-An ESPN fantasy league website with weekly results, historical lineups, bench replays, and season simulations. The 2026 home page connects league outcomes to specific NFL plays. The previous season dashboard is available at `/season`.
+Fantasy League Engine turns ESPN league data into historical lineups, matchup replays and season simulations. A Python pipeline prepares the data for a Next.js website, where an optional AI analyst can inspect matchup records and sourced NFL plays. The previous season dashboard is available at `/season`.
+
+## Code and tests
+
+- [Python pipeline](src/fantasy_nfl/): ESPN and nflverse imports, league scoring and season simulations.
+- The [Next.js application](apps/web/) contains the league views, matchup replay and private editing studio.
+- [Analyst context](apps/web/src/server/analyst-context.ts) prepares matchup evidence and finds the best legal lineup. [Lineup tests](apps/web/src/server/analyst-context.test.ts) check overlapping position eligibility and compare the optimizer with exhaustive assignments.
+- [Python tests](tests/) cover imports, projections and simulation. The [analyst budget tests](apps/web/src/server/analyst-budget.test.ts) exercise concurrent requests, restart recovery and failed cleanup.
 
 ## 2026 revival
 
